@@ -203,7 +203,8 @@ def cmd_review(args) -> int:
     patterns, errors = pack_loader.load_pack_dir(Path(packs_dir))
     if errors:
         for e in errors:
-            logger.warning(f"Pack error: {e}")
+            logger.error(f"Pack error: {e}")
+        return 1
 
     if args.experience:
         exp_path = Path(args.experience).resolve()

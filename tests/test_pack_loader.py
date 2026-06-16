@@ -73,6 +73,36 @@ class PackLoaderTests(unittest.TestCase):
         dup_errors = [e for e in errors if "Duplicate pattern id" in str(e)]
         self.assertEqual(len(dup_errors), 1)
 
+    def test_duplicate_pattern_id_fails_validation(self):
+        yaml_content = """
+- id: clash-pattern
+  title: Clash
+  language: Python
+  bug_type: misc
+  root_cause: clash
+  confidence: 0.5
+  evidence:
+    - repo: test/repo
+      url: https://github.com/test/repo/issues/1
+"""
+        (self.tmp / "a.yaml").write_text(yaml_content, encoding="utf-8")
+        (self.tmp / "b.yaml").write_text(yaml_content, encoding="utf-8")
+        patterns, errors = pack_loader.load_pack_dir(self.tmp)
+        self.assertEqual(len(patterns), 1)
+        dup_found = any("Duplicate pattern id" in str(e) for e in errors)
+        self.assertTrue(dup_found)
+
+    def test_duplicate_pattern_id_fails_review_load(self):
+        import subprocess, sys
+        from pathlib import Path
+        packs_dir = Path(__file__).resolve().parent.parent / "skills" / "issueoracle" / "packs"
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "skills" / "issueoracle" / "scripts" / "issueoracle.py"),
+             "validate", str(packs_dir)],
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, msg=f"validate exited {result.returncode}:\n{result.stderr}")
+
     def test_load_valid_pattern(self):
         yaml_content = """
 - id: test-pattern

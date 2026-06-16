@@ -14,6 +14,8 @@ def verify():
     critical = [
         skill_dir / "SKILL.md",
         scripts_dir / "issueoracle.py",
+        scripts_dir / "build_skill.py",
+        scripts_dir / "lib" / "version.py",
         scripts_dir / "lib" / "schema.py",
         scripts_dir / "lib" / "env.py",
         scripts_dir / "lib" / "pack_loader.py",

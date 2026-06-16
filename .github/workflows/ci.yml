@@ -2,36 +2,50 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: test py${{ matrix.python-version }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install Python
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Sync dependencies
-        run: uv sync --all-extras --dev
-
-      - name: Ruff check
-        run: uv run ruff check .
+        run: uv sync --all-groups
 
       - name: Ruff format check
         run: uv run ruff format --check .
 
-      - name: Test
-        run: uv run pytest -v --tb=short
+      - name: Ruff lint
+        run: uv run ruff check .
 
-      - name: Eval
-        run: uv run python skills/issueoracle/evals/run_eval.py --verbose
+      - name: Unit tests
+        run: uv run pytest tests/ -q
+
+      - name: Validate built-in packs
+        run: uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+
+      - name: Run evals
+        run: uv run python skills/issueoracle/evals/run_eval.py
+
+      - name: Diagnose
+        run: uv run python skills/issueoracle/scripts/issueoracle.py diagnose
+
+      - name: Build skill bundle
+        run: uv run python skills/issueoracle/scripts/build_skill.py
+
+      - name: Verify skill bundle
+        run: uv run python skills/issueoracle/scripts/verify.py
