@@ -154,6 +154,31 @@ A finding is only reported when IssueOracle has a matched bug pattern, concrete 
 
 Mined experiences are saved to `~/.issueoracle/bugplay/experience.json` for the review engine and `~/.issueoracle/bugplay/bug-experience.md` as a narrative document organized by bug type.
 
+Resume an interrupted mining session:
+
+```bash
+/issueoracle mine fastapi/fastapi,encode/starlette --resume --max-issues 30
+```
+
+### Manage bug experiences
+
+```bash
+# List all bug experiences (candidate + approved + rejected)
+/issueoracle experience list
+
+# Show details of a specific experience
+/issueoracle experience show exp-missing-finally-1
+
+# Approve a candidate experience for use in review
+/issueoracle experience approve exp-missing-finally-1
+
+# Reject a false-positive experience
+/issueoracle experience reject exp-missing-finally-1
+
+# Export only approved experiences for shared use
+/issueoracle experience export-approved
+```
+
 ### Validate packs
 
 ```bash

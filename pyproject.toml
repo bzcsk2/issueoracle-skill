@@ -1,6 +1,6 @@
 [project]
 name = "issueoracle-skill"
-version = "0.2.1"
+version = "0.4.0"
 description = "Review local code using OSS issue-derived bug patterns with concrete evidence."
 readme = "README.md"
 requires-python = ">=3.12"

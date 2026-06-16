@@ -68,9 +68,9 @@
 - `search_similar_repos()` — topic AND 条件从 3 个减到 1 个，避免多条件 AND 导致 0 结果
 - `README.zh.md`（新建）— 完整中文版 README，含语言切换条
 - `profile.py` — 新增 `pydantic`/`pytest`/`ruff` 等 `_TOPIC_MAP` 条目
-- 分支: `chore/v0.2.1-credibility`，10 commits，已推送到 origin
+- 分支: `chore/v0.2.1-credibility`，15 commits，已推送到 origin，已合并到 main 并打 tag v0.4.0
 
-### Phase 5 — v0.2.1 可信度提升
+### Phase 5 — v0.4.0 可信度提升（原计划 v0.2.1）
 - `ruff` 格式化 + `pyproject.toml` 配置统一
 - `SKILL.md` 结构恢复（合约恢复、frontmatter 修复）
 - 版本统一：`version.py` + 所有文件改为 0.2.1
@@ -115,7 +115,7 @@
 
 ## 验证数据
 - 单元测试: **147 个全部通过**
-- Eval 套件: **17/22 通过**（5 个已知 FP 待修复）
+- Eval 套件: **22/22 通过**
 - Seed patterns: **5 个 YAML 定义**（3 Python FastAPI + 2 TypeScript Express）+ **1 个经验驱动**（exp-missing-finally-1）
 - `diagnose`/`validate`/`review`/`mine`/`scan`/`doctor`/`experience` 全部命令可用
 - Python 3.14 / Windows 兼容

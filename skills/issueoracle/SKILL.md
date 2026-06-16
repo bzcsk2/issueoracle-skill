@@ -1,6 +1,6 @@
 ---
 name: issueoracle
-version: "0.2.1"
+version: "0.4.0"
 description: "Scan, mine, and review code using OSS bug patterns. Profile projects, batch-mine GitHub issues, and review local code with evidence."
 argument-hint: "issueoracle scan . | issueoracle mine owner/repo,... | issueoracle review . --experience <path>"
 allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
@@ -40,7 +40,7 @@ tags:
 
 You are inside the IssueOracle skill.
 
-IssueOracle is a three-command local-first toolchain: **scan → mine → review**.
+IssueOracle is a seven-command local-first toolchain: **scan → mine → review → validate → experience → diagnose → doctor**.
 
 - **scan** profiles a local project and recommends 5 similar OSS projects.
 - **mine** batch-extracts bug experiences from GitHub repos into a narrative markdown document.
@@ -83,7 +83,7 @@ review ./my-project --experience ...  → findings driven by mined experience
 6. Do NOT upload local code to any remote LLM unless ISSUEORACLE_ALLOW_REMOTE_LLM=1.
 
 ## Intent parsing
-Classify into: SCAN_PROJECT | REVIEW_REPO | REVIEW_DIFF | MINE_REPO | REVIEW_WITH_EXPERIENCE | VALIDATE_PACK | EXPLAIN_FINDING | HELP
+Classify into: SCAN_PROJECT | REVIEW_REPO | REVIEW_DIFF | MINE_REPO | REVIEW_WITH_EXPERIENCE | MANAGE_EXPERIENCE | VALIDATE_PACK | DIAGNOSE | DOCTOR | EXPLAIN_FINDING | HELP
 
 ## Commands
 ### SCAN_PROJECT
@@ -98,6 +98,12 @@ Classify into: SCAN_PROJECT | REVIEW_REPO | REVIEW_DIFF | MINE_REPO | REVIEW_WIT
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" mine "$OWNER_REPOS" --human-review --emit markdown
 ### VALIDATE_PACK
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" validate "$PACK_PATH" --emit markdown
+### DIAGNOSE
+"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" diagnose
+### DOCTOR
+"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" doctor
+### MANAGE_EXPERIENCE
+"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" experience list
 
 ## Safety rules
 - Never upload local code to remote LLMs unless `ISSUEORACLE_ALLOW_REMOTE_LLM=1`.
