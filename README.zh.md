@@ -3,14 +3,61 @@
 # IssueOracle Skill
 
 从 GitHub 已修复的 issue 中挖掘 bug 模式，再用具体证据审查本地代码。
-v0.2 新增三命令流水线：**scan → mine → review**。
+
+## 安装
+
+### 推荐：Agent Skills CLI
+
+全局安装：
+
+```bash
+npx skills add bzcsk2/issueoracle-skill -g
+```
+
+项目级安装：
+
+```bash
+npx skills add bzcsk2/issueoracle-skill
+```
+
+更新：
+
+```bash
+npx skills update issueoracle
+```
+
+### Claude Code 市场
+
+计划中。在 IssueOracle 被收录进市场前，请使用 `npx skills add`。
+
+### Claude Code 手动安装
+
+```bash
+git clone https://github.com/bzcsk2/issueoracle-skill.git
+mkdir -p ~/.claude/skills
+ln -s "$(pwd)/issueoracle-skill/skills/issueoracle" ~/.claude/skills/issueoracle
+```
+
+### Codex 手动安装
+
+```bash
+git clone https://github.com/bzcsk2/issueoracle-skill.git
+mkdir -p ~/.codex/skills
+ln -s "$(pwd)/issueoracle-skill/skills/issueoracle" ~/.codex/skills/issueoracle
+```
+
+### 构建本地 .skill
+
+```bash
+uv sync --all-groups
+uv run python skills/issueoracle/scripts/build_skill.py
+```
+
+生成文件：`dist/issueoracle.skill`
 
 ## 快速开始
 
 ```bash
-# 安装
-npx skills add bzcsk2/issueoracle-skill -g
-
 # 扫描项目 → 获取画像 + 同类 OSS 推荐
 /issueoracle scan .
 
@@ -68,7 +115,7 @@ review ./my-project --experience ...  → 由挖掘经验驱动的审查结果
 /issueoracle mine fastapi/fastapi,encode/starlette,sqlalchemy/sqlalchemy --max-issues 30
 ```
 
-挖掘结果保存到 `~/.issueoracle/bugplay/bug-experience.md`，按 bug 类型组织的叙事文档。每条包含：症状 → 根因 → 触发条件 → 坏代码信号 → 修复方式 → 证据链接。
+挖掘结果保存到 `~/.issueoracle/bugplay/bug-experience.md`。
 
 ### 校验模式包
 
@@ -83,19 +130,25 @@ review ./my-project --experience ...  → 由挖掘经验驱动的审查结果
 /issueoracle diagnose
 ```
 
+### Doctor
+
+```bash
+/issueoracle doctor
+```
+
 ## 工作原理
 
-1. **Scan**：对本地项目画像（语言、框架、依赖、风险面），分类项目类型，推断 GitHub 搜索关键词，推荐 5 个同类开源项目。
-2. **Mine**：批量搜索 GitHub 已关闭的 bug issue，过滤真实 bug，链接到修复 PR，提取候选 bug 模式，聚合成叙事型 bug 经验 markdown 文档。
+1. **Scan**：对本地项目画像，分类项目类型，推断 GitHub 搜索关键词，推荐 5 个同类开源项目。
+2. **Mine**：批量搜索 GitHub 已关闭的 bug issue，过滤真实 bug，链接到修复 PR，提取候选 bug 模式，聚合成叙事型 bug 经验文档。
 3. **Review**：加载种子模式 + 可选经验文档，索引本地代码，匹配信号，生成带证据的发现报告。
 
 ## 开发
 
 ```bash
 uv sync
-python3 -m pytest tests/ -q
-python3 skills/issueoracle/scripts/issueoracle.py diagnose
-python3 skills/issueoracle/evals/run_eval.py
+uv run pytest tests/ -q
+uv run python skills/issueoracle/scripts/issueoracle.py diagnose
+uv run python skills/issueoracle/evals/run_eval.py
 ```
 
 ## 要求

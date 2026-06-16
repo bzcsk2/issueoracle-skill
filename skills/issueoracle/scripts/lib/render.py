@@ -189,3 +189,20 @@ def render_validation(result: dict, emit: str = "markdown") -> str:
         errs = err.get("errors", "?")
         lines.append(f"  - `{pid}` in {fname}: {errs}")
     return "\n".join(lines)
+
+
+def render_doctor(data: dict) -> str:
+    lines = [
+        "IssueOracle Doctor",
+        "",
+        f"Version: {data.get('version', '?')}",
+    ]
+    for check in data.get("checks", []):
+        icon = "OK" if check.get("ok") else "FAIL"
+        msg = check.get("message", "")
+        lines.append(f"  {icon}  {msg}")
+    if data.get("suggested"):
+        lines.append("")
+        lines.append(f"Suggested next command:")
+        lines.append(f"  {data['suggested']}")
+    return "\n".join(lines)

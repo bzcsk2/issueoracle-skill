@@ -84,6 +84,8 @@ def build_parser():
 
     sub.add_parser("diagnose", help="Print environment and pack status")
 
+    sub.add_parser("doctor", help="User-facing health check")
+
     return parser
 
 
@@ -111,6 +113,66 @@ def diagnose() -> dict:
         spec = importlib.util.find_spec(mod_name)
         info["dependencies"][mod_name] = spec is not None
     return info
+
+
+def cmd_doctor() -> int:
+    from lib import pack_loader
+    from lib.version import __version__
+
+    checks = []
+    ok = True
+
+    python_ver = sys.version_info
+    if python_ver >= (3, 12):
+        checks.append({"ok": True, "message": f"Python {python_ver.major}.{python_ver.minor}.{python_ver.micro}"})
+    else:
+        checks.append({"ok": False, "message": f"Python {python_ver.major}.{python_ver.minor} < 3.12"})
+        ok = False
+
+    skill_dir = SCRIPT_DIR.parent
+    if skill_dir.exists():
+        checks.append({"ok": True, "message": f"Skill dir: {skill_dir}"})
+    else:
+        checks.append({"ok": False, "message": "Skill dir not found"})
+        ok = False
+
+    packs_dir = skill_dir / "packs"
+    patterns, errors = pack_loader.load_pack_dir(packs_dir)
+    if errors:
+        checks.append({"ok": False, "message": f"Packs: {len(patterns)} patterns, {len(errors)} errors"})
+        ok = False
+    else:
+        checks.append({"ok": True, "message": f"Packs: {len(patterns)} patterns"})
+
+    fixtures_dir = skill_dir / "evals" / "fixtures"
+    fixture_count = len([d for d in fixtures_dir.iterdir() if d.is_dir()]) if fixtures_dir.exists() else 0
+    checks.append({"ok": True, "message": f"Eval fixtures: {fixture_count}"})
+
+    git_available = False
+    try:
+        import subprocess
+        subprocess.run(["git", "--version"], capture_output=True, timeout=5)
+        git_available = True
+    except Exception:
+        pass
+    checks.append({"ok": git_available, "message": "Git: available" if git_available else "Git: not found"})
+
+    github_token = env.get_config().get("GITHUB_TOKEN")
+    if github_token:
+        checks.append({"ok": True, "message": "GitHub token: configured"})
+    else:
+        checks.append({"ok": True, "message": "GitHub token: missing, public rate limit only (60 req/hr)"})
+
+    home = env.get_issueoracle_home()
+    checks.append({"ok": True, "message": f"ISSUEORACLE_HOME: {home}"})
+
+    data = {
+        "version": __version__,
+        "checks": checks,
+        "suggested": "/issueoracle scan .",
+    }
+    print(render.render_doctor(data))
+    return 0 if ok else 1
 
 
 def cmd_diagnose(args) -> int:
@@ -375,7 +437,9 @@ def main():
     if getattr(args, "debug", False):
         os.environ["ISSUEORACLE_DEBUG"] = "1"
     try:
-        if args.command == "diagnose":
+        if args.command == "doctor":
+            return cmd_doctor()
+        elif args.command == "diagnose":
             return cmd_diagnose(args)
         elif args.command == "validate":
             return cmd_validate(args)

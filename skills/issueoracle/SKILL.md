@@ -57,6 +57,15 @@ It must only report a finding when ALL of these exist:
 
 Never claim code is buggy only because similar projects had similar issues.
 
+## Step 0: First-run setup
+
+Before invoking any IssueOracle command, silently check whether `~/.config/issueoracle/.env` exists.
+
+If this is the first run:
+1. Read `skills/issueoracle/nux-wizard.md`.
+2. Follow it.
+3. After setup, proceed to intent parsing.
+
 ## Pipeline
 
 ```text
