@@ -1,6 +1,6 @@
 ---
 name: issueoracle
-version: "0.2.0"
+version: "0.2.1"
 description: "Scan, mine, and review code using OSS bug patterns. Profile projects, batch-mine GitHub issues, and review local code with evidence."
 argument-hint: "issueoracle scan . | issueoracle mine owner/repo,... | issueoracle review . --experience <path>"
 allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
@@ -66,6 +66,7 @@ review ./my-project --experience ...  → findings driven by mined experience
 ```
 
 ## Runtime preflight
+
 1. Resolve Python 3.12+.
 2. Resolve SKILL_DIR from the loaded SKILL.md location.
 3. Set ISSUEORACLE_HOME to ~/.issueoracle if unset.
@@ -74,27 +75,50 @@ review ./my-project --experience ...  → findings driven by mined experience
 6. Do NOT upload local code to any remote LLM unless ISSUEORACLE_ALLOW_REMOTE_LLM=1.
 
 ## Intent parsing
+
 Classify into: SCAN_PROJECT | REVIEW_REPO | REVIEW_DIFF | MINE_REPO | REVIEW_WITH_EXPERIENCE | VALIDATE_PACK | EXPLAIN_FINDING | HELP
 
 ## Commands
+
 ### SCAN_PROJECT
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" scan "$TARGET_REPO" --emit markdown
+```
+
 ### REVIEW_REPO
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --emit markdown
+```
+
 ### REVIEW_DIFF
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --changed --base main --emit markdown
+```
+
 ### REVIEW_WITH_EXPERIENCE
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --experience "$EXPERIENCE_PATH" --emit markdown
+```
+
 ### MINE_REPO
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" mine "$OWNER_REPOS" --human-review --emit markdown
+```
+
 ### VALIDATE_PACK
+
+```bash
 "$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" validate "$PACK_PATH" --emit markdown
+```
 
 ## Output contract
-Final response must contain: review scope, patterns considered, files scanned,
-findings grouped by severity, and per-finding: file/line, confidence, matched pattern,
-trigger condition, local evidence, OSS evidence, suggested fix, validation test,
-false-positive boundary.
+
+Final response must contain: review scope, patterns considered, files scanned, findings grouped by severity, and per-finding: file/line, confidence, matched pattern, trigger condition, local evidence, OSS evidence, suggested fix, validation test, false-positive boundary.
 
 Do NOT output low-confidence findings by default.
 Do NOT output findings without line evidence.
