@@ -1,6 +1,6 @@
 [project]
 name = "issueoracle-skill"
-version = "0.1.0"
+version = "0.2.1"
 description = "Review local code using OSS issue-derived bug patterns with concrete evidence."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -36,3 +36,16 @@ show_missing = true
 omit = [
     "dist/*",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["skills/issueoracle/scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
