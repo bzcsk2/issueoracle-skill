@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
 
-from lib import pack_loader, schema
+from lib import pack_loader
 
 
 class PackLoaderTests(unittest.TestCase):
@@ -13,6 +13,7 @@ class PackLoaderTests(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_load_empty_dir(self):

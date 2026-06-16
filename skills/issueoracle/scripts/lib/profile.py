@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 from lib import schema
 
 
-def profile_repo(
-    repo_path: str, changed_files: list[str] | None = None
-) -> schema.RepoProfile:
+def profile_repo(repo_path: str, changed_files: list[str] | None = None) -> schema.RepoProfile:
     repo = Path(repo_path).resolve()
     languages = _detect_languages(repo)
     frameworks = _detect_frameworks(repo)
@@ -93,6 +90,7 @@ def _detect_dependencies(repo: Path) -> list[str]:
     if pyproject.exists():
         content = pyproject.read_text(encoding="utf-8", errors="replace")
         import tomllib
+
         try:
             data = tomllib.loads(content)
             project = data.get("project", {})
@@ -147,12 +145,10 @@ def _infer_risk_surfaces(frameworks: list[str], deps: list[str], repo: Path) -> 
     for surface, keywords in _RISK_KEYWORDS.items():
         if any(kw in all_items for kw in keywords):
             surfaces.append(surface)
-    if any(repo.rglob("*/auth*")) or any(repo.rglob("*/login*")):
-        if "auth" not in surfaces:
-            surfaces.append("auth")
-    if repo.rglob("*/admin*"):
-        if "web" not in surfaces:
-            surfaces.append("web")
+    if (any(repo.rglob("*/auth*")) or any(repo.rglob("*/login*"))) and "auth" not in surfaces:
+        surfaces.append("auth")
+    if repo.rglob("*/admin*") and "web" not in surfaces:
+        surfaces.append("web")
     return sorted(set(surfaces))
 
 
@@ -160,7 +156,9 @@ def classify_project_type(profile: schema.RepoProfile) -> str:
     fw = {f.lower() for f in profile.frameworks}
     deps = {d.lower() for d in profile.dependencies}
     all_kw = fw | deps
-    if any(k in all_kw for k in ("fastapi", "flask", "django", "express", "next", "koa", "starlette")):
+    if any(
+        k in all_kw for k in ("fastapi", "flask", "django", "express", "next", "koa", "starlette")
+    ):
         return "web_api"
     if any(k in all_kw for k in ("click", "typer", "commander", "yargs", "cobra", "clap")):
         return "cli"
@@ -198,7 +196,19 @@ _PROJECT_TYPE_TOPICS: dict[str, list[str]] = {
 }
 
 
-_LANGUAGE_NAMES = {"python", "typescript", "javascript", "rust", "go", "java", "ruby", "csharp", "cpp", "swift", "kotlin"}
+_LANGUAGE_NAMES = {
+    "python",
+    "typescript",
+    "javascript",
+    "rust",
+    "go",
+    "java",
+    "ruby",
+    "csharp",
+    "cpp",
+    "swift",
+    "kotlin",
+}
 
 
 def infer_search_topics(profile: schema.RepoProfile) -> list[str]:

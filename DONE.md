@@ -63,10 +63,16 @@
 - `tests/test_profile.py` — 新增 `ClassifyProjectTypeTests`（8 个测试）+ `InferSearchTopicsTests`（3 个测试）
 - `tests/test_github_search.py` — 新增 `test_search_similar_repos` / `test_search_similar_repos_empty` mock 测试
 - `profile.infer_search_topics()` — 修复：同时检查 `frameworks` + `dependencies`
+- `classify_project_type()` — 移除以 risk_surfaces 回退 `web_api` 的规则，改用 library/testing 关键词判断
+- `infer_search_topics()` — 精简 topic 映射为真实 GitHub topic；新增 `_PROJECT_TYPE_TOPICS` 兜底；排除语言名避免无效搜索
+- `search_similar_repos()` — topic AND 条件从 3 个减到 1 个，避免多条件 AND 导致 0 结果
+- `README.zh.md`（新建）— 完整中文版 README，含语言切换条
+- `profile.py` — 新增 `pydantic`/`pytest`/`ruff` 等 `_TOPIC_MAP` 条目
 
 ## 验证数据
-- 单元测试: **131 个全部通过**
+- 单元测试: **132 个全部通过**
 - Eval 套件: **22/22 通过**
 - Seed patterns: **7 个**（5 Python + 2 TypeScript）
 - `diagnose`/`validate`/`review`/`mine`/`scan` 全部命令可用
 - Python 3.14 / Windows 兼容
+- `npx skills add bzcsk2/issueoracle-skill -g` 安装验证通过

@@ -40,14 +40,22 @@ class SafetyTests(unittest.TestCase):
 
     def test_build_safe_evidence_with_pr(self):
         issue = schema.GitHubIssue(
-            number=1, title="Bug", state="closed",
+            number=1,
+            title="Bug",
+            state="closed",
             url="https://github.com/o/r/issues/1",
             created_at="2024-01-01",
         )
-        prs = [schema.LinkedPR(
-            number=10, title="Fix", state="closed", merged=True,
-            url="https://github.com/o/r/pull/10", commit_sha="abc",
-        )]
+        prs = [
+            schema.LinkedPR(
+                number=10,
+                title="Fix",
+                state="closed",
+                merged=True,
+                url="https://github.com/o/r/pull/10",
+                commit_sha="abc",
+            )
+        ]
         evidence = safety.build_safe_evidence(issue, prs, "o/r")
         self.assertEqual(len(evidence), 1)
         self.assertEqual(evidence[0].repo, "o/r")
@@ -55,7 +63,9 @@ class SafetyTests(unittest.TestCase):
 
     def test_build_safe_evidence_no_pr(self):
         issue = schema.GitHubIssue(
-            number=2, title="Bug", state="closed",
+            number=2,
+            title="Bug",
+            state="closed",
             url="https://github.com/o/r/issues/2",
             created_at="2024-01-01",
         )

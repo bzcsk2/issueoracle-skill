@@ -1,4 +1,5 @@
 """Eval runner for IssueOracle pattern fixtures."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lib import code_index, pack_loader, pattern_match, profile, review
+from lib import code_index, pack_loader, pattern_match, profile, review  # noqa: E402
 
 
 def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = "text"):
@@ -53,13 +54,15 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
                 passed += 1
             else:
                 failed += 1
-                results.append({
-                    "fixture": fixture_name,
-                    "variant": variant,
-                    "expected": expected,
-                    "actual": has_findings,
-                    "findings": len(findings),
-                })
+                results.append(
+                    {
+                        "fixture": fixture_name,
+                        "variant": variant,
+                        "expected": expected,
+                        "actual": has_findings,
+                        "findings": len(findings),
+                    }
+                )
 
     summary = {
         "total": passed + failed,
@@ -75,7 +78,7 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
         if failed:
             print(f"  {failed} failure(s):")
             for r in results:
-                print(f"    {r['fixture']}/{r['variant']}: expected={r['expected']}, actual={r['actual']}")
+                print(f"    {r['fixture']}/{r['variant']}: exp={r['expected']}, got={r['actual']}")
 
     return 0 if failed == 0 else 1
 
@@ -89,7 +92,10 @@ def main():
     parser.add_argument("--emit", default="text", choices=["text", "json"])
     args = parser.parse_args()
     return run_eval(
-        Path(args.fixtures), Path(args.golden), Path(args.packs), emit=args.emit,
+        Path(args.fixtures),
+        Path(args.golden),
+        Path(args.packs),
+        emit=args.emit,
     )
 
 

@@ -16,15 +16,21 @@ class ClassifyProjectTypeTests(unittest.TestCase):
         self.assertEqual(profile.classify_project_type(prof), "web_api")
 
     def test_web_api_express(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["TypeScript"], frameworks=["Express"])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["TypeScript"], frameworks=["Express"]
+        )
         self.assertEqual(profile.classify_project_type(prof), "web_api")
 
     def test_cli_click(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["click"])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["click"]
+        )
         self.assertEqual(profile.classify_project_type(prof), "cli")
 
     def test_cli_typer(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["typer"])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["typer"]
+        )
         self.assertEqual(profile.classify_project_type(prof), "cli")
 
     def test_frontend_react(self):
@@ -32,11 +38,15 @@ class ClassifyProjectTypeTests(unittest.TestCase):
         self.assertEqual(profile.classify_project_type(prof), "frontend")
 
     def test_library_fallback(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["requests"])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["Python"], frameworks=[], dependencies=["requests"]
+        )
         self.assertEqual(profile.classify_project_type(prof), "library")
 
     def test_library_default(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["Rust"], frameworks=[], dependencies=[])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["Rust"], frameworks=[], dependencies=[]
+        )
         self.assertEqual(profile.classify_project_type(prof), "library")
 
 
@@ -53,7 +63,9 @@ class InferSearchTopicsTests(unittest.TestCase):
         self.assertIn("cli", topics)
 
     def test_fallback_to_project_type(self):
-        prof = schema.RepoProfile(repo_path="/tmp", languages=["Rust"], frameworks=[], dependencies=[])
+        prof = schema.RepoProfile(
+            repo_path="/tmp", languages=["Rust"], frameworks=[], dependencies=[]
+        )
         topics = profile.infer_search_topics(prof)
         self.assertIn("library", topics)
         self.assertNotIn("rust", topics)  # language names excluded from topics

@@ -31,16 +31,23 @@ def build_evidence(
 ) -> list[schema.OssEvidence]:
     evidences: list[schema.OssEvidence] = []
     for pr in prs:
-        evidences.append(schema.OssEvidence(
-            repo=owner_repo,
-            issue=issue.number,
-            pr=pr.number,
-            commit=pr.commit_sha,
-            url=issue.url,
-            strength="high" if pr.merged else "medium",
-        ))
+        evidences.append(
+            schema.OssEvidence(
+                repo=owner_repo,
+                issue=issue.number,
+                pr=pr.number,
+                commit=pr.commit_sha,
+                url=issue.url,
+                strength="high" if pr.merged else "medium",
+            )
+        )
     if not evidences:
-        evidences.append(schema.OssEvidence(
-            repo=owner_repo, issue=issue.number, url=issue.url, strength="low",
-        ))
+        evidences.append(
+            schema.OssEvidence(
+                repo=owner_repo,
+                issue=issue.number,
+                url=issue.url,
+                strength="low",
+            )
+        )
     return evidences

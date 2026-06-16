@@ -30,9 +30,9 @@ if os.name == "nt":
 SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lib import config as config_mod, env, log, render, schema
-from lib import experience as experience_mod
-import store
+import store  # noqa: E402
+from lib import env, log, render, schema  # noqa: E402
+from lib import experience as experience_mod  # noqa: E402
 
 
 def build_parser():
@@ -56,14 +56,19 @@ def build_parser():
     p_review.add_argument("--languages")
     p_review.add_argument("--frameworks")
     p_review.add_argument("--packs", default=None)
-    p_review.add_argument("--severity-threshold", default="medium", choices=["low", "medium", "high"])
+    p_review.add_argument(
+        "--severity-threshold", default="medium", choices=["low", "medium", "high"]
+    )
     p_review.add_argument("--max-findings", type=int, default=20)
     p_review.add_argument("--emit", default="markdown", choices=["markdown", "json", "compact"])
     p_review.add_argument("--save-dir", default=None)
     p_review.add_argument("--debug", action="store_true")
 
     p_mine = sub.add_parser("mine", help="Mine bug patterns from GitHub repos (comma-separated)")
-    p_mine.add_argument("owner_repo", help="GitHub repo(s) as owner/repo, comma-separated (e.g. fastapi/fastapi,encode/starlette)")
+    p_mine.add_argument(
+        "owner_repo",
+        help="GitHub repo(s) as owner/repo (comma-separated)",
+    )
     p_mine.add_argument("--label", default="bug")
     p_mine.add_argument("--state", default="closed")
     p_mine.add_argument("--max-issues", type=int, default=50)
@@ -87,7 +92,7 @@ def diagnose() -> dict:
     packs_dir = SCRIPT_DIR.parent / "packs"
     packs_found = 0
     if packs_dir.exists():
-        for p in packs_dir.rglob("patterns.yaml"):
+        for _p in packs_dir.rglob("patterns.yaml"):
             packs_found += 1
 
     github_token = env.get_config().get("GITHUB_TOKEN")
@@ -125,7 +130,14 @@ def cmd_validate(args) -> int:
         "pack_path": str(pack_path.resolve()),
         "patterns_valid": len(patterns),
         "patterns_invalid": len(errors),
-        "errors": [{"file": str(e.get("file", "")), "pattern_id": str(e.get("id", "")), "errors": e.get("errors", [])} for e in errors],
+        "errors": [
+            {
+                "file": str(e.get("file", "")),
+                "pattern_id": str(e.get("id", "")),
+                "errors": e.get("errors", []),
+            }
+            for e in errors
+        ],
     }
     output = render.render_validation(result, emit=args.emit)
     print(output)
@@ -134,6 +146,7 @@ def cmd_validate(args) -> int:
 
 def cmd_scan(args) -> int:
     from lib import github_search, profile
+
     logger = log.get_logger()
     repo_path = Path(args.repo_path).resolve()
     if not repo_path.exists():
@@ -147,7 +160,10 @@ def cmd_scan(args) -> int:
     cfg = env.get_config()
     token = cfg.get("GITHUB_TOKEN") or None
     candidates = github_search.search_similar_repos(
-        primary_lang, topics, token=token, max_results=args.max_repos,
+        primary_lang,
+        topics,
+        token=token,
+        max_results=args.max_repos,
     )
     profile_dict = {
         "languages": prof.languages,
@@ -201,8 +217,19 @@ def cmd_review(args) -> int:
         logger.warning("No patterns loaded")
         report = {
             "version": "0.1.0",
-            "scope": {"repo": str(repo_path), "mode": "diff" if args.changed else "full", "patterns_loaded": 0, "files_scanned": 0},
-            "summary": {"findings_total": 0, "suppressed": 0, "by_severity": {}, "patterns_loaded": 0, "files_scanned": 0},
+            "scope": {
+                "repo": str(repo_path),
+                "mode": "diff" if args.changed else "full",
+                "patterns_loaded": 0,
+                "files_scanned": 0,
+            },
+            "summary": {
+                "findings_total": 0,
+                "suppressed": 0,
+                "by_severity": {},
+                "patterns_loaded": 0,
+                "files_scanned": 0,
+            },
             "findings": [],
             "suppressed": [],
         }
@@ -228,7 +255,12 @@ def cmd_review(args) -> int:
 
         report = {
             "version": "0.1.0",
-            "scope": {"repo": str(repo_path), "mode": "diff" if args.changed else "full", "patterns_loaded": len(patterns), "files_scanned": len(chunks)},
+            "scope": {
+                "repo": str(repo_path),
+                "mode": "diff" if args.changed else "full",
+                "patterns_loaded": len(patterns),
+                "files_scanned": len(chunks),
+            },
             "summary": {
                 "findings_total": len(findings_list),
                 "suppressed": len(suppressed),
@@ -240,8 +272,14 @@ def cmd_review(args) -> int:
             "suppressed": [f.model_dump() for f in suppressed],
         }
 
-    output = render.render_review(report) if args.emit == "markdown" else (
-        render.render_review_json(report) if args.emit == "json" else render.render_review_compact(report)
+    output = (
+        render.render_review(report)
+        if args.emit == "markdown"
+        else (
+            render.render_review_json(report)
+            if args.emit == "json"
+            else render.render_review_compact(report)
+        )
     )
     print(output)
 
@@ -268,7 +306,7 @@ def _count_by_severity(findings):
 
 
 def cmd_mine(args) -> int:
-    from lib import evidence_linker, github_search, issue_filter, pattern_extract, safety
+    from lib import evidence_linker, github_search, issue_filter, pattern_extract
 
     cfg = env.get_config()
     if args.debug:
@@ -303,8 +341,10 @@ def cmd_mine(args) -> int:
     logger.info(f"Total candidates across all repos: {len(all_candidates)}")
 
     report = experience_mod.aggregate(
-        all_candidates, repos,
-        total_issues=total_issues, bug_issues=bug_issues_count,
+        all_candidates,
+        repos,
+        total_issues=total_issues,
+        bug_issues=bug_issues_count,
     )
     report_md = experience_mod.to_markdown(report)
     report_json = report.model_dump_json(indent=2)
@@ -317,7 +357,14 @@ def cmd_mine(args) -> int:
 
     logger.info(f"Bug experience report saved to {bugplay_dir / 'bug-experience.md'}")
     logger.info(f"Run `issueoracle review <repo> --experience {bugplay_dir / 'bug-experience.md'}`")
-    store.write_last_run({"command": "mine", "repos": repos, "candidates": len(all_candidates), "bugplay_dir": str(bugplay_dir)})
+    store.write_last_run(
+        {
+            "command": "mine",
+            "repos": repos,
+            "candidates": len(all_candidates),
+            "bugplay_dir": str(bugplay_dir),
+        }
+    )
     return 0
 
 
@@ -340,6 +387,7 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         if os.environ.get("ISSUEORACLE_DEBUG"):
             import traceback
+
             traceback.print_exc(file=sys.stderr)
         return 1
     return 2

@@ -12,12 +12,17 @@ class EvidenceLinkerTests(unittest.TestCase):
     def test_link_issue_to_prs(self, mock_fetch_pr, mock_find_linked):
         mock_find_linked.return_value = [42]
         mock_fetch_pr.return_value = schema.LinkedPR(
-            number=42, title="Fix crash", state="closed", merged=True,
+            number=42,
+            title="Fix crash",
+            state="closed",
+            merged=True,
             url="https://github.com/o/r/pull/42",
             commit_sha="abc123",
         )
         issue = schema.GitHubIssue(
-            number=1, title="Bug", state="closed",
+            number=1,
+            title="Bug",
+            state="closed",
             url="https://github.com/o/r/issues/1",
             created_at="2024-01-01",
         )
@@ -28,14 +33,22 @@ class EvidenceLinkerTests(unittest.TestCase):
 
     def test_build_evidence_with_prs(self):
         issue = schema.GitHubIssue(
-            number=1, title="Bug", state="closed",
+            number=1,
+            title="Bug",
+            state="closed",
             url="https://github.com/o/r/issues/1",
             created_at="2024-01-01",
         )
-        prs = [schema.LinkedPR(
-            number=42, title="Fix", state="closed", merged=True,
-            url="https://github.com/o/r/pull/42", commit_sha="abc",
-        )]
+        prs = [
+            schema.LinkedPR(
+                number=42,
+                title="Fix",
+                state="closed",
+                merged=True,
+                url="https://github.com/o/r/pull/42",
+                commit_sha="abc",
+            )
+        ]
         evidence = evidence_linker.build_evidence(issue, prs, "o/r")
         self.assertEqual(len(evidence), 1)
         self.assertEqual(evidence[0].strength, "high")
@@ -43,7 +56,9 @@ class EvidenceLinkerTests(unittest.TestCase):
 
     def test_build_evidence_no_prs(self):
         issue = schema.GitHubIssue(
-            number=1, title="Bug", state="closed",
+            number=1,
+            title="Bug",
+            state="closed",
             url="https://github.com/o/r/issues/1",
             created_at="2024-01-01",
         )

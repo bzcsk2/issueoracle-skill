@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from lib import schema
 
@@ -32,11 +31,15 @@ def match(
             if trigger_cov == 0.0:
                 continue
             score = _score(pattern, signal_hits, trigger_cov)
-            results.append(MatchResult(
-                pattern=pattern, chunk=chunk,
-                signal_hits=signal_hits,
-                trigger_coverage=trigger_cov, score=score,
-            ))
+            results.append(
+                MatchResult(
+                    pattern=pattern,
+                    chunk=chunk,
+                    signal_hits=signal_hits,
+                    trigger_coverage=trigger_cov,
+                    score=score,
+                )
+            )
     results.sort(key=lambda r: r.score, reverse=True)
     return results
 
@@ -51,10 +54,9 @@ def _metadata_recall(pattern: schema.Pattern, profile: schema.RepoProfile) -> bo
                 return False
         else:
             return False
-    if pattern.frameworks and profile.frameworks:
-        if not any(f.lower() in [pf.lower() for pf in profile.frameworks] for f in pattern.frameworks):
-            return False
-    return True
+    if not pattern.frameworks or not profile.frameworks:
+        return True
+    return any(f.lower() in [pf.lower() for pf in profile.frameworks] for f in pattern.frameworks)
 
 
 def _match_signals(bad_signals: list[str], chunk: schema.CodeChunk) -> list[str]:

@@ -14,9 +14,13 @@ class ProjectProfileTests(unittest.TestCase):
 
     def test_full(self):
         p = schema.ProjectProfile(
-            repo_path="/tmp/test", languages=["Python"], frameworks=["FastAPI"],
-            dependencies=["pydantic"], risk_surfaces=["web"],
-            project_type="web_api", search_topics=["fastapi"],
+            repo_path="/tmp/test",
+            languages=["Python"],
+            frameworks=["FastAPI"],
+            dependencies=["pydantic"],
+            risk_surfaces=["web"],
+            project_type="web_api",
+            search_topics=["fastapi"],
         )
         self.assertEqual(p.project_type, "web_api")
 
@@ -78,7 +82,7 @@ class PatternTests(unittest.TestCase):
         self.assertEqual(p2.evidence[0].repo, "o/r")
 
     def test_pattern_requires_evidence(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception):  # noqa: B017
             schema.Pattern(
                 id="no-evidence",
                 title="No Evidence",
@@ -90,7 +94,7 @@ class PatternTests(unittest.TestCase):
             )
 
     def test_confidence_range(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception):  # noqa: B017
             schema.Pattern(
                 id="bad-confidence",
                 title="Bad",
@@ -116,7 +120,10 @@ class PatternTests(unittest.TestCase):
 class GitHubIssueTests(unittest.TestCase):
     def test_minimal(self):
         gi = schema.GitHubIssue(
-            number=1, title="Bug", state="closed", url="https://github.com/o/r/issues/1",
+            number=1,
+            title="Bug",
+            state="closed",
+            url="https://github.com/o/r/issues/1",
             created_at="2024-01-01",
         )
         self.assertEqual(gi.number, 1)
@@ -125,10 +132,15 @@ class GitHubIssueTests(unittest.TestCase):
 
     def test_full(self):
         gi = schema.GitHubIssue(
-            number=42, title="Crash on startup", state="closed",
+            number=42,
+            title="Crash on startup",
+            state="closed",
             labels=["bug", "high-priority"],
-            body="Error trace...", url="https://github.com/o/r/issues/42",
-            created_at="2024-01-01", closed_at="2024-01-05", author="dev",
+            body="Error trace...",
+            url="https://github.com/o/r/issues/42",
+            created_at="2024-01-01",
+            closed_at="2024-01-05",
+            author="dev",
         )
         self.assertEqual(len(gi.labels), 2)
         self.assertEqual(gi.author, "dev")
@@ -137,10 +149,14 @@ class GitHubIssueTests(unittest.TestCase):
 class CandidatePatternTests(unittest.TestCase):
     def test_defaults(self):
         cp = schema.CandidatePattern(
-            id="mined-test-1", title="Test", language="Python",
-            bug_type="resource_leak", root_cause="test",
+            id="mined-test-1",
+            title="Test",
+            language="Python",
+            bug_type="resource_leak",
+            root_cause="test",
             evidence=[schema.OssEvidence(repo="o/r", url="https://github.com/o/r/issues/1")],
-            source_issue=1, source_repo="o/r",
+            source_issue=1,
+            source_repo="o/r",
         )
         self.assertEqual(cp.confidence, 0.5)
         self.assertEqual(cp.status, "candidate")
@@ -150,11 +166,17 @@ class CandidatePatternTests(unittest.TestCase):
 class FindingTests(unittest.TestCase):
     def test_minimal(self):
         f = schema.Finding(
-            id="finding-1", severity="high", confidence=0.8,
-            file="src/app.py", start_line=10, end_line=20,
-            title="Test finding", matched_pattern="test-pattern",
+            id="finding-1",
+            severity="high",
+            confidence=0.8,
+            file="src/app.py",
+            start_line=10,
+            end_line=20,
+            title="Test finding",
+            matched_pattern="test-pattern",
             trigger_condition="async without finally",
-            suggested_fix="Add finally block", validation="",
+            suggested_fix="Add finally block",
+            validation="",
             false_positive_boundary="Only applies to async functions",
         )
         self.assertEqual(f.severity, "high")
@@ -178,9 +200,14 @@ class ReviewReportTests(unittest.TestCase):
 class MiningResultTests(unittest.TestCase):
     def test_empty_candidates(self):
         mr = schema.MiningResult(
-            repo="o/r", mined_at="2024-01-01",
-            issues_searched=10, issues_kept=5, issues_with_pr=3,
-            candidates=[], raw_dir="/tmp/raw", review_path="/tmp/review.md",
+            repo="o/r",
+            mined_at="2024-01-01",
+            issues_searched=10,
+            issues_kept=5,
+            issues_with_pr=3,
+            candidates=[],
+            raw_dir="/tmp/raw",
+            review_path="/tmp/review.md",
         )
         self.assertEqual(len(mr.candidates), 0)
 
@@ -188,7 +215,10 @@ class MiningResultTests(unittest.TestCase):
 class LinkedPRTests(unittest.TestCase):
     def test_minimal(self):
         pr = schema.LinkedPR(
-            number=1, title="Fix bug", state="closed", merged=True,
+            number=1,
+            title="Fix bug",
+            state="closed",
+            merged=True,
             url="https://github.com/o/r/pull/1",
         )
         self.assertTrue(pr.merged)

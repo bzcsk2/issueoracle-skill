@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-from lib import github_search, schema
+from lib import github_search
 
 
 class GithubSearchTests(unittest.TestCase):
@@ -24,7 +24,9 @@ class GithubSearchTests(unittest.TestCase):
                 }
             ]
         }
-        issues = github_search.search_closed_issues("o/r", label="bug", max_results=10, token="test-token")
+        issues = github_search.search_closed_issues(
+            "o/r", label="bug", max_results=10, token="test-token"
+        )
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].number, 1)
         self.assertEqual(issues[0].labels, ["bug", "critical"])
@@ -56,7 +58,9 @@ class GithubSearchTests(unittest.TestCase):
                 },
             ]
         }
-        repos = github_search.search_similar_repos("Python", ["fastapi", "web-framework"], token="test-token", max_results=2)
+        repos = github_search.search_similar_repos(
+            "Python", ["fastapi", "web-framework"], token="test-token", max_results=2
+        )
         self.assertEqual(len(repos), 2)
         self.assertEqual(repos[0].owner_repo, "fastapi/fastapi")
         self.assertEqual(repos[0].stars, 75000)

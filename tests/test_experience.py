@@ -5,21 +5,31 @@ from pathlib import Path
 
 import pytest
 
-from lib import schema
 from lib import experience as exp_mod
+from lib import schema
 
-SAMPLE_EVIDENCE = [schema.OssEvidence(repo="test/repo", issue=42, url="https://github.com/test/repo/issues/42", pr_url="")]
+SAMPLE_EVIDENCE = [
+    schema.OssEvidence(
+        repo="test/repo", issue=42, url="https://github.com/test/repo/issues/42", pr_url=""
+    )
+]
 SAMPLE_CANDIDATES = [
     schema.CandidatePattern(
-        id="bug-001", title="Missing validation",
-        language="Python", bug_type="validation_bug",
+        id="bug-001",
+        title="Missing validation",
+        language="Python",
+        bug_type="validation_bug",
         symptoms=["Input not validated"],
-        root_cause="No input check", trigger_conditions=[],
+        root_cause="No input check",
+        trigger_conditions=[],
         bad_code_signals=["if", "validate"],
         fix_patterns=["add check function"],
-        evidence=SAMPLE_EVIDENCE, confidence=0.8,
-        frameworks=[], false_positive_boundary="test",
-        source_issue=1, source_repo="test/repo",
+        evidence=SAMPLE_EVIDENCE,
+        confidence=0.8,
+        frameworks=[],
+        false_positive_boundary="test",
+        source_issue=1,
+        source_repo="test/repo",
     ),
 ]
 
@@ -31,8 +41,7 @@ class TestAggregate:
         assert report.source_repos == ["test/repo"]
 
     def test_aggregate_with_candidates(self):
-        report = exp_mod.aggregate(SAMPLE_CANDIDATES, ["test/repo"],
-                                   total_issues=10, bug_issues=3)
+        report = exp_mod.aggregate(SAMPLE_CANDIDATES, ["test/repo"], total_issues=10, bug_issues=3)
         assert len(report.experiences) == 1
         assert report.total_issues == 10
         assert report.bug_issues == 3
@@ -66,15 +75,21 @@ class TestToMarkdown:
 
     def test_markdown_signal_formatting(self):
         cand = schema.CandidatePattern(
-            id="bug-002", title="SQL injection",
-            language="Python", bug_type="security_bug",
+            id="bug-002",
+            title="SQL injection",
+            language="Python",
+            bug_type="security_bug",
             symptoms=["SQL injection risk"],
-            root_cause="Raw query building", trigger_conditions=[],
+            root_cause="Raw query building",
+            trigger_conditions=[],
             bad_code_signals=["execute(", "raw sql"],
             fix_patterns=["Use parameterized queries"],
-            evidence=SAMPLE_EVIDENCE, confidence=0.9,
-            frameworks=[], false_positive_boundary="test",
-            source_issue=2, source_repo="test/repo",
+            evidence=SAMPLE_EVIDENCE,
+            confidence=0.9,
+            frameworks=[],
+            false_positive_boundary="test",
+            source_issue=2,
+            source_repo="test/repo",
         )
         report = exp_mod.aggregate([cand], ["test/repo"])
         md = exp_mod.to_markdown(report)
@@ -94,16 +109,29 @@ class TestLoadAsPatterns:
 
     def test_load_with_experience_json(self, tmp_path: Path):
         data = {
-            "experiences": [{
-                "id": "exp-1", "title": "Null pointer",
-                "symptom": "Crash on null", "root_cause": "Missing null check",
-                "trigger_condition": "When input is None",
-                "bad_code_signals": ["null check", "if"],
-                "fix": "Add null guard",
-                "evidence": [{"repo": "test/repo", "issue": 42, "url": "https://github.com/test/repo/issues/42", "pr_url": ""}],
-                "bug_type": "null_bug", "language": "Python",
-                "frameworks": [], "confidence": 0.8,
-            }]
+            "experiences": [
+                {
+                    "id": "exp-1",
+                    "title": "Null pointer",
+                    "symptom": "Crash on null",
+                    "root_cause": "Missing null check",
+                    "trigger_condition": "When input is None",
+                    "bad_code_signals": ["null check", "if"],
+                    "fix": "Add null guard",
+                    "evidence": [
+                        {
+                            "repo": "test/repo",
+                            "issue": 42,
+                            "url": "https://github.com/test/repo/issues/42",
+                            "pr_url": "",
+                        }
+                    ],
+                    "bug_type": "null_bug",
+                    "language": "Python",
+                    "frameworks": [],
+                    "confidence": 0.8,
+                }
+            ]
         }
         f = tmp_path / "exp.json"
         f.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -142,7 +170,9 @@ class TestBugExperienceToPattern:
     def test_with_signals(self):
         ev = schema.OssEvidence(repo="test/repo", issue=1, url="u", pr_url="")
         be = schema.BugExperience(
-            id="x1", title="test", root_cause="bad init",
+            id="x1",
+            title="test",
+            root_cause="bad init",
             bad_code_signals=["init", "config"],
             trigger_condition="on startup",
             evidence=[ev],
@@ -161,26 +191,32 @@ class TestExperienceDrivenReview:
         "mined_at": "2026-06-16T00:00:00",
         "total_issues": 1,
         "bug_issues": 1,
-        "experiences": [{
-            "id": "missing-finally-1",
-            "title": "Session not closed on exception path",
-            "symptom": "Connection pool exhaustion",
-            "root_cause": "Session opened without finally block",
-            "trigger_condition": "DB session opened without finally",
-            "bad_code_signals": ["session", "query(", "execute("],
-            "fix": "Wrap in try/finally",
-            "evidence": [
-                {"repo": "test/repo", "issue": 42,
-                 "url": "https://github.com/test/repo/issues/42", "pr_url": ""},
-            ],
-            "bug_type": "resource_leak",
-            "language": "Python",
-            "frameworks": ["FastAPI", "SQLAlchemy"],
-            "confidence": 0.8,
-        }],
+        "experiences": [
+            {
+                "id": "missing-finally-1",
+                "title": "Session not closed on exception path",
+                "symptom": "Connection pool exhaustion",
+                "root_cause": "Session opened without finally block",
+                "trigger_condition": "DB session opened without finally",
+                "bad_code_signals": ["session", "query(", "execute("],
+                "fix": "Wrap in try/finally",
+                "evidence": [
+                    {
+                        "repo": "test/repo",
+                        "issue": 42,
+                        "url": "https://github.com/test/repo/issues/42",
+                        "pr_url": "",
+                    },
+                ],
+                "bug_type": "resource_leak",
+                "language": "Python",
+                "frameworks": ["FastAPI", "SQLAlchemy"],
+                "confidence": 0.8,
+            }
+        ],
     }
 
-    BAD_CODE = '''from fastapi import FastAPI
+    BAD_CODE = """from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -192,9 +228,9 @@ def get_users():
     session = Session(engine)
     result = session.query("SELECT * FROM users").all()
     return {"users": result}
-'''
+"""
 
-    GOOD_CODE = '''from fastapi import FastAPI
+    GOOD_CODE = """from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -209,7 +245,7 @@ def get_users():
         return {"users": result}
     finally:
         session.close()
-'''
+"""
 
     @pytest.fixture
     def experience_file(self, tmp_path: Path) -> Path:
@@ -232,7 +268,7 @@ def get_users():
         return d
 
     def test_bad_code_produces_findings(self, experience_file: Path, bad_project: Path):
-        from lib import code_index, pack_loader, pattern_match, profile, review
+        from lib import code_index, pattern_match, profile, review
 
         patterns = exp_mod.load_as_patterns(str(experience_file))
         assert len(patterns) == 1
@@ -260,10 +296,12 @@ def get_users():
 class TestPatternExtractSignalsEnhanced:
     def test_extract_from_title(self):
         from lib.pattern_extract import _extract_signals
+
         signals = _extract_signals("", title="async session timeout error")
         assert "async " in signals or "session" in signals or "timeout" in signals
 
     def test_extract_from_pr_titles(self):
         from lib.pattern_extract import _extract_signals
+
         signals = _extract_signals("", title="fix", pr_titles=["fix async session timeout"])
         assert len(signals) > 0

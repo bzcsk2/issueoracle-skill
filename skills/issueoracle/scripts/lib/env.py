@@ -13,6 +13,7 @@ elif _config_override:
 else:
     CONFIG_DIR = Path.home() / ".issueoracle"
 
+
 def get_issueoracle_home() -> Path:
     override = os.environ.get("ISSUEORACLE_HOME")
     return Path(override) if override else (Path.home() / ".issueoracle")
@@ -48,8 +49,7 @@ def get_config() -> dict[str, Any]:
             or merged.get("severity_threshold", "medium")
         ),
         "MAX_FINDINGS": int(
-            os.environ.get("ISSUEORACLE_MAX_FINDINGS")
-            or merged.get("max_findings", 20)
+            os.environ.get("ISSUEORACLE_MAX_FINDINGS") or merged.get("max_findings", 20)
         ),
     }
     return config

@@ -27,7 +27,8 @@ def _paginated_get(url: str, token: str | None, params: dict | None = None) -> l
 def fetch_timeline(owner_repo: str, issue_number: int, token: str | None = None) -> list[dict]:
     return _paginated_get(
         f"/repos/{owner_repo}/issues/{issue_number}/timeline",
-        token, {"per_page": 100},
+        token,
+        {"per_page": 100},
     )
 
 
@@ -61,7 +62,8 @@ def fetch_pr_files(owner_repo: str, pr_number: int, token: str | None = None) ->
     try:
         data = _paginated_get(
             f"/repos/{owner_repo}/pulls/{pr_number}/files",
-            token, {"per_page": 100},
+            token,
+            {"per_page": 100},
         )
         return [f["filename"] for f in data] if data else []
     except Exception:

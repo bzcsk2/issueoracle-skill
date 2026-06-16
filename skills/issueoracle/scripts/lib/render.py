@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 
 def render_diagnose(data: dict) -> str:
@@ -63,8 +62,7 @@ def render_review_compact(report: dict) -> str:
     lines: list[str] = []
     for f in report.get("findings", []):
         lines.append(
-            f"[{f['severity']}] {f['file']}:{f['start_line']} "
-            f"({f['confidence']}) {f['title']}"
+            f"[{f['severity']}] {f['file']}:{f['start_line']} ({f['confidence']}) {f['title']}"
         )
     return "\n".join(lines) if lines else "No findings."
 
@@ -119,14 +117,16 @@ def render_scan(profile: dict, candidates: list[dict], emit: str = "markdown") -
         lines.append("|---|------|-------|-------------|")
         for i, c in enumerate(candidates, 1):
             desc = c.get("description", "")[:60]
-            lines.append(f"| {i} | [{c['owner_repo']}]({c.get('url', '')}) | {c.get('stars', 0)} | {desc} |")
+            lines.append(
+                f"| {i} | [{c['owner_repo']}]({c.get('url', '')}) | {c.get('stars', 0)} | {desc} |"
+            )
         lines.append("")
         repos = ",".join(c["owner_repo"] for c in candidates)
         lines.append("## Next Step")
         lines.append("Run mining on these projects to extract bug experience:")
-        lines.append(f"```")
+        lines.append("```")
         lines.append(f"issueoracle.py mine {repos}")
-        lines.append(f"```")
+        lines.append("```")
     else:
         lines.append("No similar projects found.")
     lines.append("")
@@ -142,7 +142,9 @@ def render_bug_experience(report: dict, emit: str = "markdown") -> str:
     src = report.get("source_repos", [])
     lines.append(f"Mined from: {', '.join(src)}")
     lines.append(f"Date: {report.get('mined_at', 'unknown')}")
-    lines.append(f"Total issues: {report.get('total_issues', 0)} | Bug issues: {report.get('bug_issues', 0)}")
+    lines.append(
+        f"Total issues: {report.get('total_issues', 0)} | Bug issues: {report.get('bug_issues', 0)}"
+    )
     lines.append("")
     exp_by_type: dict[str, list[dict]] = {}
     for e in report.get("experiences", []):
@@ -166,7 +168,8 @@ def render_bug_experience(report: dict, emit: str = "markdown") -> str:
                 lines.append(f"- **Fix**: {e['fix']}")
             ev = e.get("evidence", [])
             for ev_item in ev:
-                lines.append(f"- **Evidence**: [{ev_item['repo']}#{ev_item.get('issue', '?')}]({ev_item['url']})")
+                issue_num = ev_item.get("issue", "?")
+                lines.append(f"- **Evidence**: [{ev_item['repo']}#{issue_num}]({ev_item['url']})")
             lines.append("")
     return "\n".join(lines)
 
@@ -181,5 +184,8 @@ def render_validation(result: dict, emit: str = "markdown") -> str:
     lines.append(f"- **Valid patterns**: {result.get('patterns_valid', 0)}")
     lines.append(f"- **Invalid patterns**: {result.get('patterns_invalid', 0)}")
     for err in result.get("errors", []):
-        lines.append(f"  - `{err.get('pattern_id', '?')}` in {err.get('file', '?')}: {err.get('errors', '?')}")
+        pid = err.get("pattern_id", "?")
+        fname = err.get("file", "?")
+        errs = err.get("errors", "?")
+        lines.append(f"  - `{pid}` in {fname}: {errs}")
     return "\n".join(lines)
