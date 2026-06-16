@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 import urllib.parse
 import urllib.request
 from typing import Any
 
 from lib import safety, schema
+from lib.version import USER_AGENT
 
 GITHUB_API = "https://api.github.com"
 
@@ -15,7 +15,7 @@ def _headers(token: str | None) -> dict[str, str]:
     h = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "issueoracle-skill/0.1.0",
+        "User-Agent": USER_AGENT,
     }
     if token:
         h["Authorization"] = f"Bearer {token}"
@@ -43,40 +43,49 @@ def search_closed_issues(
     issues: list[schema.GitHubIssue] = []
     for item in data.get("items", [])[:max_results]:
         safe_body = safety.sanitize_issue_body(item.get("body") or "")
-        issues.append(schema.GitHubIssue(
-            number=item["number"],
-            title=item["title"],
-            state=item["state"],
-            labels=[l["name"] for l in item.get("labels", [])],
-            body=safe_body,
-            url=item["html_url"],
-            created_at=item["created_at"],
-            closed_at=item.get("closed_at"),
-            author=item.get("user", {}).get("login", ""),
-        ))
+        issues.append(
+            schema.GitHubIssue(
+                number=item["number"],
+                title=item["title"],
+                state=item["state"],
+                labels=[l["name"] for l in item.get("labels", [])],
+                body=safe_body,
+                url=item["html_url"],
+                created_at=item["created_at"],
+                closed_at=item.get("closed_at"),
+                author=item.get("user", {}).get("login", ""),
+            )
+        )
     return issues
 
 
 def search_similar_repos(
-    language: str, topics: list[str], *,
-    token: str | None = None, max_results: int = 5,
+    language: str,
+    topics: list[str],
+    *,
+    token: str | None = None,
+    max_results: int = 5,
 ) -> list[schema.RepoCandidate]:
     q_parts = [f"language:{language}"]
     q_parts += [f"topic:{t}" for t in topics[:1]]
     q_parts.append("stars:>100")
     q = " ".join(q_parts)
-    data = _request("/search/repositories", token, {
-        "q": q, "sort": "stars", "order": "desc", "per_page": max_results,
-    })
+    data = _request(
+        "/search/repositories",
+        token,
+        {"q": q, "sort": "stars", "order": "desc", "per_page": max_results},
+    )
     candidates: list[schema.RepoCandidate] = []
     for item in data.get("items", [])[:max_results]:
-        candidates.append(schema.RepoCandidate(
-            owner_repo=item["full_name"],
-            stars=item["stargazers_count"],
-            description=item.get("description", "") or "",
-            url=item["html_url"],
-            topics=item.get("topics", []),
-        ))
+        candidates.append(
+            schema.RepoCandidate(
+                owner_repo=item["full_name"],
+                stars=item["stargazers_count"],
+                description=item.get("description", "") or "",
+                url=item["html_url"],
+                topics=item.get("topics", []),
+            )
+        )
     return candidates
 
 
