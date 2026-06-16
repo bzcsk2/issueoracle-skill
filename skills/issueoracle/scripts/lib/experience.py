@@ -133,6 +133,18 @@ def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | Non
                 code_signals=be.bad_code_signals[:5],
             )
         )
+
+    typed: list[schema.TypedSignal | str] = []
+    for sig in be.bad_code_signals:
+        if isinstance(sig, schema.TypedSignal):
+            typed.append(sig)
+        elif sig.startswith("!") and len(sig) > 1:
+            typed.append(schema.TypedSignal(kind="suppress_if_present", value=sig[1:]))
+        else:
+            typed.append(sig)
+    if not any(isinstance(s, schema.TypedSignal) for s in typed):
+        pass
+
     return schema.Pattern(
         id=f"exp-{be.id}",
         title=be.title,
@@ -142,7 +154,7 @@ def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | Non
         symptoms=[be.symptom] if be.symptom else [],
         root_cause=be.root_cause,
         trigger_conditions=triggers,
-        bad_code_signals=be.bad_code_signals,
+        bad_code_signals=typed,
         fix_patterns=[be.fix] if be.fix else [],
         evidence=be.evidence,
         confidence=be.confidence,

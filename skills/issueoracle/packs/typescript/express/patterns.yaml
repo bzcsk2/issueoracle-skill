@@ -76,18 +76,14 @@ patterns:
         value: "app.use"
       - kind: required_any
         values:
-          - "unless"
-          - "skip"
-      - kind: required_any
-        values:
           - "auth"
           - "authenticate"
+      - kind: optional
+        value: "unless"
+      - kind: optional
+        value: "skip"
       - kind: suppress_if_present
-        value: "app.use(auth"
-      - kind: suppress_if_present
-        value: "router.use(auth"
-      - kind: suppress_if_present
-        value: "app.use('/admin', auth"
+        value: "authMiddleware, adminRoutes"
     fix_patterns:
       - "Apply auth middleware globally with explicit path exclusions"
       - "Mount auth middleware before all protected routes"

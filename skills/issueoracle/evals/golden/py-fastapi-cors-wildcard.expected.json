@@ -1,1 +1,1 @@
-{"bad": {"expected_findings": true, "must_include_patterns": ["py-fastapi-cors-wildcard"], "must_include_files": ["bad.py"], "min_confidence": 0.5}, "good": {"expected_findings": true, "must_not_include_patterns": ["py-fastapi-cors-wildcard"]}}
+{"bad": {"expected_findings": true, "must_include_patterns": ["py-fastapi-cors-wildcard"], "must_include_files": ["bad.py"], "min_confidence": 0.5}, "good": {"expected_findings": false, "must_not_include_patterns": ["py-fastapi-cors-wildcard"]}}

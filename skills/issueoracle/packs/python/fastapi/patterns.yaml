@@ -22,10 +22,12 @@ patterns:
           - "execute("
           - "query("
     bad_code_signals:
+      - kind: required
+        value: "async def"
       - kind: required_any
         values:
           - "session"
-          - "db"
+          - "db."
           - "AsyncSession"
       - kind: required_any
         values:

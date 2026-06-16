@@ -56,6 +56,8 @@ class Pattern(BaseModel):
                     result.append(item)
                 elif isinstance(item, dict):
                     result.append(TypedSignal(kind="required", value=item.get("value", str(item))))
+                elif isinstance(item, TypedSignal):
+                    result.append(item)
                 else:
                     result.append(str(item))
             return result
