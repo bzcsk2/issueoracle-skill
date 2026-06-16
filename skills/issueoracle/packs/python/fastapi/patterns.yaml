@@ -16,20 +16,21 @@ patterns:
       - description: Async function that creates a database session without guaranteed cleanup
         code_signals:
           - "async def"
-          - "session"
+          - "AsyncSession"
       - description: Route handler with inline session usage
         code_signals:
-          - "session"
-          - "query("
           - "execute("
+          - "query("
     bad_code_signals:
-      - kind: required
-        value: "session"
+      - kind: required_any
+        values:
+          - "session"
+          - "db"
+          - "AsyncSession"
       - kind: required_any
         values:
           - "query("
           - "execute("
-          - "AsyncSession"
       - kind: optional
         value: "await"
       - kind: suppress_if_present
