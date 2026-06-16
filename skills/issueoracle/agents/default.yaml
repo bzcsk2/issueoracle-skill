@@ -1,0 +1,7 @@
+# agent
+interface: claude-code
+policy:
+  strict_mode: true
+  require_approval:
+    - mine
+  debounce_ms: 500

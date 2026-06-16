@@ -1,0 +1,76 @@
+patterns:
+  - id: ts-express-error-handling-missing
+    title: Express async route handler without error wrapper
+    language: TypeScript
+    frameworks:
+      - express
+    bug_type: unhandled_rejection
+    severity_hint: high
+    symptoms:
+      - Unhandled promise rejection on async route errors
+      - Express process crash on async error
+    root_cause: Express 4 does not catch promise rejections from async route handlers
+    trigger_conditions:
+      - description: Async route handler without try-catch or wrapper
+        code_signals:
+          - "async"
+          - "router."
+          - "app."
+      - description: Async handler with no error catching
+        code_signals:
+          - "async"
+          - "req"
+          - "await"
+    bad_code_signals:
+      - "async"
+      - "router.get"
+      - "router.post"
+      - "app.get"
+      - "app.post"
+      - "await"
+    fix_patterns:
+      - "Wrap handler with express-async-errors or use an error wrapper"
+      - "Add try-catch inside async handler with next(error)"
+    evidence:
+      - repo: expressjs/express
+        issue: 5028
+        url: https://github.com/expressjs/express/issues/5028
+        strength: high
+    confidence: 0.7
+    false_positive_boundary: "Does not apply to Express 5 routes."
+
+  - id: ts-express-auth-bypass-path
+    title: Authentication middleware path pattern misconfiguration
+    language: TypeScript
+    frameworks:
+      - express
+    bug_type: auth_bypass
+    severity_hint: critical
+    symptoms:
+      - Unauthenticated access to protected routes
+    root_cause: Auth middleware applied with incorrect path pattern or mounted after protected routes
+    trigger_conditions:
+      - description: Auth middleware with potentially incorrect path filtering
+        code_signals:
+          - "app.use"
+          - "auth"
+          - "authenticate"
+      - description: Route definition without auth middleware
+        code_signals:
+          - "router."
+          - "admin"
+    bad_code_signals:
+      - "app.use"
+      - "unless"
+      - "skip"
+      - "auth"
+    fix_patterns:
+      - "Apply auth middleware globally with explicit path exclusions"
+      - "Mount auth middleware before all protected routes"
+    evidence:
+      - repo: expressjs/express
+        issue: 4627
+        url: https://github.com/expressjs/express/issues/4627
+        strength: medium
+    confidence: 0.6
+    false_positive_boundary: "May false-positive on correctly configured unless() exclusions."

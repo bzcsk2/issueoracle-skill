@@ -1,0 +1,38 @@
+[project]
+name = "issueoracle-skill"
+version = "0.1.0"
+description = "Review local code using OSS issue-derived bug patterns with concrete evidence."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10",
+    "pytest-cov>=7,<8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "-q",
+    "--tb=short",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["skills/issueoracle/scripts", "tests"]
+omit = [
+    "dist/*",
+]
+
+[tool.coverage.report]
+skip_empty = true
+show_missing = true
+omit = [
+    "dist/*",
+]
