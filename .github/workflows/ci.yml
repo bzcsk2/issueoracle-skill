@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: test py${{ matrix.python-version }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Sync dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff format check
+        run: uvx ruff format --check .
+
+      - name: Ruff lint
+        run: uvx ruff check .
+
+      - name: Unit tests
+        run: uv run pytest tests/ -q
+
+      - name: Validate built-in packs
+        run: uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+
+      - name: Run evals
+        run: uv run python skills/issueoracle/evals/run_eval.py
+
+      - name: Diagnose
+        run: uv run python skills/issueoracle/scripts/issueoracle.py diagnose
+
+      - name: Build skill bundle
+        run: uv run python skills/issueoracle/scripts/build_skill.py
+
+      - name: Verify skill bundle
+        run: uv run python skills/issueoracle/scripts/verify.py
