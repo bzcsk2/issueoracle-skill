@@ -79,6 +79,9 @@ def build_parser():
     p_mine.add_argument("--emit", default="markdown", choices=["markdown", "json"])
     p_mine.add_argument("--save-dir", default=None)
     p_mine.add_argument("--debug", action="store_true")
+    p_mine.add_argument("--resume", action="store_true", help="Resume last interrupted mine run")
+    p_mine.add_argument("--offline-cache", action="store_true", help="Use cached results only, no network")
+    p_mine.add_argument("--cache-ttl", default="7d", help="Cache TTL (e.g. 7d, 24h)")
 
     p_validate = sub.add_parser("validate", help="Validate a pattern pack directory")
     p_validate.add_argument("pack_path")
@@ -494,6 +497,20 @@ def cmd_mine(args) -> int:
     all_candidates: list[schema.CandidatePattern] = []
     total_issues = 0
     bug_issues_count = 0
+    completed_issues_set: set[str] = set()
+    run_dir: Path | None = None
+
+    if args.resume:
+        last_run = store.find_last_run_dir()
+        if last_run is None:
+            logger.error("No previous run to resume")
+            return 1
+        run_dir = last_run
+        progress = store.load_run(run_dir)
+        completed_issues_set = set(progress.get("completed_issues", []))
+        logger.info(f"Resuming run {progress['run_id']} ({len(completed_issues_set)} issues already done)")
+    else:
+        run_dir = store.create_run(repos)
 
     for repo in repos:
         logger.info(f"Mining {repo}...")
@@ -507,10 +524,31 @@ def cmd_mine(args) -> int:
         bug_issues_count += len(bug_issues)
         language_hint = ""
         for issue in bug_issues:
-            prs = evidence_linker.link_issue_to_prs(issue, repo, token)
-            cand = pattern_extract.extract_candidate(issue, prs, repo, language_hint)
-            if cand:
-                all_candidates.append(cand)
+            issue_key = f"{repo}#{issue.number}"
+            if issue_key in completed_issues_set:
+                logger.debug(f"  Skipping already processed: {issue_key}")
+                continue
+            try:
+                prs = evidence_linker.link_issue_to_prs(issue, repo, token)
+                cand = pattern_extract.extract_candidate(issue, prs, repo, language_hint)
+                if cand:
+                    all_candidates.append(cand)
+                    store.append_run_line(run_dir, "candidates.jsonl", cand.model_dump_json())
+                store.append_run_line(run_dir, "issues.jsonl", issue.model_dump_json())
+                if run_dir:
+                    progress = store.load_run(run_dir)
+                    progress.setdefault("completed_issues", []).append(issue_key)
+                    store.save_run(run_dir, progress)
+            except Exception as e:
+                logger.warning(f"Failed to process {issue_key}: {e}")
+                if run_dir:
+                    store.append_run_line(run_dir, "errors.jsonl", json.dumps({"issue": issue_key, "error": str(e)}))
+
+    if run_dir:
+        progress = store.load_run(run_dir)
+        progress["status"] = "completed"
+        store.save_run(run_dir, progress)
+        logger.info(f"Run progress saved to {run_dir / 'progress.json'}")
 
     logger.info(f"Total candidates across all repos: {len(all_candidates)}")
 

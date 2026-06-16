@@ -166,6 +166,11 @@ class RepoCandidate(BaseModel):
     description: str = ""
     url: str = ""
     topics: list[str] = Field(default_factory=list)
+    score: float = 0.0
+    matched_topics: list[str] = Field(default_factory=list)
+    matched_frameworks: list[str] = Field(default_factory=list)
+    last_pushed_at: str | None = None
+    open_issues_count: int | None = None
 
 
 class BugExperience(BaseModel):
