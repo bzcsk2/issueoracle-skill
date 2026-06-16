@@ -13,6 +13,8 @@ from lib import code_index, pack_loader, pattern_match, profile, review
 
 
 def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = "text"):
+    from lib import experience as experience_mod
+
     patterns, _ = pack_loader.load_pack_dir(packs_dir)
     results = []
     passed = 0
@@ -28,6 +30,11 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
 
         golden = json.loads(golden_path.read_text(encoding="utf-8"))
 
+        eval_patterns = list(patterns)
+        exp_file = fixture_dir / "experience.json"
+        if exp_file.exists():
+            eval_patterns += experience_mod.load_as_patterns(str(exp_file))
+
         for variant in ("bad", "good"):
             variant_dir = fixture_dir / variant
             if not variant_dir.exists():
@@ -35,7 +42,7 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
 
             prof = profile.profile_repo(str(variant_dir))
             chunks = code_index.index_repo(str(variant_dir), prof)
-            matches = pattern_match.match(chunks, patterns, prof)
+            matches = pattern_match.match(chunks, eval_patterns, prof)
             findings, _ = review.build_findings(matches, "low", 20)
 
             has_findings = len(findings) > 0

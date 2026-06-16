@@ -13,7 +13,16 @@ def ensure_home() -> Path:
     (home / "cache" / "github").mkdir(parents=True, exist_ok=True)
     (home / "cache" / "repo-profile").mkdir(parents=True, exist_ok=True)
     (home / "mining").mkdir(parents=True, exist_ok=True)
+    (home / "bugplay").mkdir(parents=True, exist_ok=True)
     return home
+
+
+def save_experience(md: str, json_data: str) -> Path:
+    home = ensure_home()
+    bugplay = home / "bugplay"
+    (bugplay / "bug-experience.md").write_text(md, encoding="utf-8")
+    (bugplay / "experience.json").write_text(json_data, encoding="utf-8")
+    return bugplay
 
 
 def save_report(report_md: str, report_json: str, repo_slug: str) -> tuple[Path, Path]:

@@ -48,9 +48,25 @@
 - `tests/test_integration.py` — 端到端集成测试
 - README.md 完善
 
+### Phase 4 — v0.2: scan/mine/review 三命令架构
+- `schema.py` — 新增 `ProjectProfile`、`RepoCandidate`、`BugExperience`、`ExperienceReport` 4 个模型
+- `profile.py` — 新增 `classify_project_type()`（web_api/cli/library/frontend）+ `infer_search_topics()`
+- `github_search.py` — 新增 `search_similar_repos()` 仓库搜索（language + topic + stars 降序）
+- `pattern_extract.py` — 增强 `_extract_signals()` 使用 issue 标题 + PR 标题关键词；新增 `_extract_signals_from_text()`
+- `render.py` — 新增 `render_scan()`（项目画像 + 推荐清单）+ `render_bug_experience()`（叙事型经验文档）
+- `store.py` — 新增 `bugplay/` 目录 + `save_experience()`
+- `issueoracle.py` — 新增 `scan` 命令；`mine` 支持逗号分隔多仓库批量挖；`review` 支持 `--experience` 加载经验文档
+- `lib/experience.py`（新建）— `aggregate()` 候选聚合、`to_markdown()` 叙事型 markdown 生成、`load_as_patterns()` 经验文档 → Pattern 反向解析
+- `SKILL.md` — 更新为 v0.2.0，新增 `scan`/`REVIEW_WITH_EXPERIENCE` 命令，三命令流水线说明
+- `evals/` — 新增 `py-missing-finally` 经验驱动 fixture；`run_eval.py` 支持自动加载 fixture 下 `experience.json`
+- `github_fetch.py` — 新增 `_paginated_get()` 分页循环支持（上限 3 页 × 100 条）
+- `tests/test_profile.py` — 新增 `ClassifyProjectTypeTests`（8 个测试）+ `InferSearchTopicsTests`（3 个测试）
+- `tests/test_github_search.py` — 新增 `test_search_similar_repos` / `test_search_similar_repos_empty` mock 测试
+- `profile.infer_search_topics()` — 修复：同时检查 `frameworks` + `dependencies`
+
 ## 验证数据
-- 单元测试: **93 个全部通过**
-- Eval 套件: **20/20 通过**
+- 单元测试: **131 个全部通过**
+- Eval 套件: **22/22 通过**
 - Seed patterns: **7 个**（5 Python + 2 TypeScript）
-- `diagnose`/`validate`/`review`/`mine` 全部命令可用
-- Python 3.12+ / Windows / Linux 兼容
+- `diagnose`/`validate`/`review`/`mine`/`scan` 全部命令可用
+- Python 3.14 / Windows 兼容

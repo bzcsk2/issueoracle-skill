@@ -15,7 +15,8 @@ def extract_candidate(
     root_cause = _extract_root_cause(issue, prs)
     if not root_cause:
         return None
-    signals = _extract_signals(issue.body)
+    pr_titles = [pr.title for pr in prs]
+    signals = _extract_signals(issue.body, title=issue.title, pr_titles=pr_titles)
     fixes = _extract_fixes(prs)
     triggers = _infer_triggers(issue, signals)
     pid = f"mined-{owner_repo.replace('/', '-')}-{issue.number}"
@@ -52,14 +53,46 @@ def _extract_root_cause(issue: schema.GitHubIssue, prs: list[schema.LinkedPR]) -
     return issue.title
 
 
-def _extract_signals(body: str) -> list[str]:
+def _extract_signals_from_text(text: str) -> list[str]:
     signals: list[str] = []
     keywords = ("await ", "async ", "session", "query(", "execute(", "fetch(",
-                ".all()", "commit()", "rollback()")
-    for block in re.findall(r"```(?:python|typescript|go|rust|js|ts)?\n(.*?)```", body, re.DOTALL):
-        for kw in keywords:
-            if kw in block:
-                signals.append(kw.strip())
+                ".all()", "commit()", "rollback()", "cursor", "db.",
+                "import ", "from ", "app.", "router.", "response",
+                "request", "config", "env.", "password", "secret",
+                "token", "auth", "cors", "middleware", "timeout",
+                "sleep(", "lock", "mutex", "semaphore",
+                "open(", "close(", "connect", "disconnect",
+                "try:", "except", "finally:", "raise",
+                "null", "undefined", "None",
+                "eval(", "exec(", "execjs", "subprocess",
+                "shell", "os.system", "sqlite3", "psycopg2",
+                "sessionmaker", "async with", "asyncio",
+                "yield", "next(", "iter", "Generator",
+                "inject", "populate", "reflect",
+                "migrate", "alembic", "schema",
+                "upload", "download", "stream",
+                "cache", "redis", "memcached",
+                "serialize", "deserialize", "pickle",
+                "redirect", "render", "template",
+                "delete(", "drop(", "truncate",
+                "grant", "revoke", "permission",
+    )
+    for kw in keywords:
+        if kw in text:
+            signals.append(kw.strip())
+    return list(dict.fromkeys(signals))[:5]
+
+
+def _extract_signals(body: str, title: str = "", pr_titles: list[str] | None = None) -> list[str]:
+    signals: list[str] = []
+    combined = body or ""
+    if title:
+        combined += " " + title
+    if pr_titles:
+        combined += " " + " ".join(pr_titles)
+    for block in re.findall(r"```(?:python|typescript|go|rust|js|ts)?\n(.*?)```", combined, re.DOTALL):
+        signals.extend(_extract_signals_from_text(block))
+    signals.extend(_extract_signals_from_text(combined))
     return list(dict.fromkeys(signals))[:5]
 
 

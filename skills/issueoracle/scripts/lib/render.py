@@ -99,6 +99,78 @@ def render_mining(result: dict, emit: str = "markdown") -> str:
     return "\n".join(lines)
 
 
+def render_scan(profile: dict, candidates: list[dict], emit: str = "markdown") -> str:
+    if emit == "json":
+        return json.dumps({"profile": profile, "candidates": candidates}, indent=2, default=str)
+    lines: list[str] = []
+    lines.append("# IssueOracle Scan Report")
+    lines.append("")
+    lines.append("## Project Profile")
+    lines.append(f"- **Languages**: {', '.join(profile.get('languages', []))}")
+    lines.append(f"- **Frameworks**: {', '.join(profile.get('frameworks', []))}")
+    lines.append(f"- **Project type**: {profile.get('project_type', 'unknown')}")
+    lines.append(f"- **Risk surfaces**: {', '.join(profile.get('risk_surfaces', []))}")
+    lines.append(f"- **Dependencies**: {', '.join(profile.get('dependencies', []))}")
+    lines.append("")
+    lines.append("## Recommended Similar Projects")
+    lines.append("")
+    if candidates:
+        lines.append("| # | Repo | Stars | Description |")
+        lines.append("|---|------|-------|-------------|")
+        for i, c in enumerate(candidates, 1):
+            desc = c.get("description", "")[:60]
+            lines.append(f"| {i} | [{c['owner_repo']}]({c.get('url', '')}) | {c.get('stars', 0)} | {desc} |")
+        lines.append("")
+        repos = ",".join(c["owner_repo"] for c in candidates)
+        lines.append("## Next Step")
+        lines.append("Run mining on these projects to extract bug experience:")
+        lines.append(f"```")
+        lines.append(f"issueoracle.py mine {repos}")
+        lines.append(f"```")
+    else:
+        lines.append("No similar projects found.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_bug_experience(report: dict, emit: str = "markdown") -> str:
+    if emit == "json":
+        return json.dumps(report, indent=2, default=str)
+    lines: list[str] = []
+    lines.append("# Bug Experience Report")
+    lines.append("")
+    src = report.get("source_repos", [])
+    lines.append(f"Mined from: {', '.join(src)}")
+    lines.append(f"Date: {report.get('mined_at', 'unknown')}")
+    lines.append(f"Total issues: {report.get('total_issues', 0)} | Bug issues: {report.get('bug_issues', 0)}")
+    lines.append("")
+    exp_by_type: dict[str, list[dict]] = {}
+    for e in report.get("experiences", []):
+        bt = e.get("bug_type", "general_bug")
+        exp_by_type.setdefault(bt, []).append(e)
+    for bug_type, items in exp_by_type.items():
+        lines.append(f"## {bug_type.replace('_', ' ').title()} ({len(items)} bugs)")
+        lines.append("")
+        for idx, e in enumerate(items, 1):
+            lines.append(f"### {idx}. {e.get('title', '?')}")
+            if e.get("symptom"):
+                lines.append(f"- **Symptom**: {e['symptom']}")
+            if e.get("root_cause"):
+                lines.append(f"- **Root cause**: {e['root_cause']}")
+            if e.get("trigger_condition"):
+                lines.append(f"- **Trigger condition**: {e['trigger_condition']}")
+            sigs = e.get("bad_code_signals", [])
+            if sigs:
+                lines.append(f"- **Bad code signals**: `{'`, `'.join(sigs)}`")
+            if e.get("fix"):
+                lines.append(f"- **Fix**: {e['fix']}")
+            ev = e.get("evidence", [])
+            for ev_item in ev:
+                lines.append(f"- **Evidence**: [{ev_item['repo']}#{ev_item.get('issue', '?')}]({ev_item['url']})")
+            lines.append("")
+    return "\n".join(lines)
+
+
 def render_validation(result: dict, emit: str = "markdown") -> str:
     if emit == "json":
         return json.dumps(result, indent=2, default=str)

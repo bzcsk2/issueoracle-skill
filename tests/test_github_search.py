@@ -37,6 +37,38 @@ class GithubSearchTests(unittest.TestCase):
         self.assertEqual(issues, [])
 
     @mock.patch("lib.github_search._request")
+    def test_search_similar_repos(self, mock_req):
+        mock_req.return_value = {
+            "items": [
+                {
+                    "full_name": "fastapi/fastapi",
+                    "stargazers_count": 75000,
+                    "description": "FastAPI framework",
+                    "html_url": "https://github.com/fastapi/fastapi",
+                    "topics": ["fastapi", "web", "python"],
+                },
+                {
+                    "full_name": "encode/starlette",
+                    "stargazers_count": 10000,
+                    "description": "Starlette ASGI framework",
+                    "html_url": "https://github.com/encode/starlette",
+                    "topics": ["asgi", "python"],
+                },
+            ]
+        }
+        repos = github_search.search_similar_repos("Python", ["fastapi"], token="test-token", max_results=2)
+        self.assertEqual(len(repos), 2)
+        self.assertEqual(repos[0].owner_repo, "fastapi/fastapi")
+        self.assertEqual(repos[0].stars, 75000)
+        self.assertEqual(repos[1].owner_repo, "encode/starlette")
+
+    @mock.patch("lib.github_search._request")
+    def test_search_similar_repos_empty(self, mock_req):
+        mock_req.return_value = {"items": []}
+        repos = github_search.search_similar_repos("Python", ["unknown"], token=None)
+        self.assertEqual(repos, [])
+
+    @mock.patch("lib.github_search._request")
     def test_check_rate_limit(self, mock_req):
         mock_req.return_value = {
             "resources": {

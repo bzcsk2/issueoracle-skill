@@ -5,6 +5,56 @@ import unittest
 from lib import schema
 
 
+class ProjectProfileTests(unittest.TestCase):
+    def test_defaults(self):
+        p = schema.ProjectProfile(repo_path="/tmp/test")
+        self.assertEqual(p.repo_path, "/tmp/test")
+        self.assertEqual(p.languages, [])
+        self.assertEqual(p.project_type, "")
+
+    def test_full(self):
+        p = schema.ProjectProfile(
+            repo_path="/tmp/test", languages=["Python"], frameworks=["FastAPI"],
+            dependencies=["pydantic"], risk_surfaces=["web"],
+            project_type="web_api", search_topics=["fastapi"],
+        )
+        self.assertEqual(p.project_type, "web_api")
+
+
+class RepoCandidateTests(unittest.TestCase):
+    def test_defaults(self):
+        c = schema.RepoCandidate(owner_repo="test/repo")
+        self.assertEqual(c.stars, 0)
+        self.assertEqual(c.description, "")
+
+    def test_minimal(self):
+        c = schema.RepoCandidate(owner_repo="test/repo", stars=100)
+        self.assertEqual(c.owner_repo, "test/repo")
+
+
+class BugExperienceTests(unittest.TestCase):
+    def test_defaults(self):
+        be = schema.BugExperience(id="b1", title="bug")
+        self.assertEqual(be.bug_type, "general_bug")
+        self.assertEqual(be.confidence, 0.5)
+
+    def test_with_evidence(self):
+        ev = schema.OssEvidence(repo="r", issue=1, url="u", pr_url="")
+        be = schema.BugExperience(id="b1", title="bug", evidence=[ev])
+        self.assertEqual(len(be.evidence), 1)
+
+
+class ExperienceReportTests(unittest.TestCase):
+    def test_empty(self):
+        r = schema.ExperienceReport()
+        self.assertEqual(r.source_repos, [])
+        self.assertEqual(r.experiences, [])
+
+    def test_with_repos(self):
+        r = schema.ExperienceReport(source_repos=["a/b", "c/d"])
+        self.assertEqual(len(r.source_repos), 2)
+
+
 class PatternTests(unittest.TestCase):
     def test_roundtrip(self):
         p = schema.Pattern(

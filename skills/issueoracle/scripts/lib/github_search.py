@@ -57,6 +57,29 @@ def search_closed_issues(
     return issues
 
 
+def search_similar_repos(
+    language: str, topics: list[str], *,
+    token: str | None = None, max_results: int = 5,
+) -> list[schema.RepoCandidate]:
+    q_parts = [f"language:{language}"]
+    q_parts += [f"topic:{t}" for t in topics[:3]]
+    q_parts.append("stars:>100")
+    q = " ".join(q_parts)
+    data = _request("/search/repositories", token, {
+        "q": q, "sort": "stars", "order": "desc", "per_page": max_results,
+    })
+    candidates: list[schema.RepoCandidate] = []
+    for item in data.get("items", [])[:max_results]:
+        candidates.append(schema.RepoCandidate(
+            owner_repo=item["full_name"],
+            stars=item["stargazers_count"],
+            description=item.get("description", "") or "",
+            url=item["html_url"],
+            topics=item.get("topics", []),
+        ))
+    return candidates
+
+
 def check_rate_limit(token: str | None) -> dict:
     data = _request("/rate_limit", token)
     core = data["resources"]["core"]

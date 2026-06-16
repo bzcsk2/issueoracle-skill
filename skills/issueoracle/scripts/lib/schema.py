@@ -150,6 +150,47 @@ class MiningResult(BaseModel):
     review_path: str
 
 
+class ProjectProfile(BaseModel):
+    repo_path: str
+    languages: list[str] = Field(default_factory=list)
+    frameworks: list[str] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
+    risk_surfaces: list[str] = Field(default_factory=list)
+    project_type: str = ""
+    search_topics: list[str] = Field(default_factory=list)
+
+
+class RepoCandidate(BaseModel):
+    owner_repo: str
+    stars: int = 0
+    description: str = ""
+    url: str = ""
+    topics: list[str] = Field(default_factory=list)
+
+
+class BugExperience(BaseModel):
+    id: str
+    title: str
+    symptom: str = ""
+    root_cause: str = ""
+    trigger_condition: str = ""
+    bad_code_signals: list[str] = Field(default_factory=list)
+    fix: str = ""
+    evidence: list[OssEvidence] = Field(default_factory=list)
+    bug_type: str = "general_bug"
+    language: str = ""
+    frameworks: list[str] = Field(default_factory=list)
+    confidence: float = 0.5
+
+
+class ExperienceReport(BaseModel):
+    source_repos: list[str] = Field(default_factory=list)
+    mined_at: str = ""
+    total_issues: int = 0
+    bug_issues: int = 0
+    experiences: list[BugExperience] = Field(default_factory=list)
+
+
 class ValidationResult(BaseModel):
     pack_path: str
     patterns_valid: int

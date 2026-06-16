@@ -154,3 +154,44 @@ def _infer_risk_surfaces(frameworks: list[str], deps: list[str], repo: Path) -> 
         if "web" not in surfaces:
             surfaces.append("web")
     return sorted(set(surfaces))
+
+
+def classify_project_type(profile: schema.RepoProfile) -> str:
+    fw = {f.lower() for f in profile.frameworks}
+    deps = {d.lower() for d in profile.dependencies}
+    all_kw = fw | deps
+    if any(k in all_kw for k in ("fastapi", "flask", "django", "express", "next", "koa", "starlette")):
+        return "web_api"
+    if any(k in all_kw for k in ("click", "typer", "commander", "yargs", "cobra", "clap")):
+        return "cli"
+    if any(k in all_kw for k in ("react", "vue", "angular", "svelte")):
+        return "frontend"
+    if profile.risk_surfaces and "web" in profile.risk_surfaces:
+        return "web_api"
+    return "library"
+
+
+_TOPIC_MAP: dict[str, list[str]] = {
+    "fastapi": ["fastapi", "web-framework", "rest-api"],
+    "flask": ["flask", "web-framework", "rest-api"],
+    "django": ["django", "web-framework", "rest-api"],
+    "express": ["express", "web-framework", "rest-api"],
+    "nextjs": ["nextjs", "react", "web-framework"],
+    "react": ["react", "frontend", "ui"],
+    "vue": ["vue", "frontend", "ui"],
+    "sqlalchemy": ["sqlalchemy", "orm", "database"],
+    "click": ["cli", "python"],
+    "typer": ["cli", "python"],
+}
+
+
+def infer_search_topics(profile: schema.RepoProfile) -> list[str]:
+    topics: list[str] = []
+    for name in list(profile.frameworks) + list(profile.dependencies):
+        name_lower = name.lower()
+        if name_lower in _TOPIC_MAP:
+            topics.extend(_TOPIC_MAP[name_lower])
+    if not topics:
+        primary_lang = profile.languages[0].lower() if profile.languages else "python"
+        topics.append(primary_lang)
+    return list(dict.fromkeys(topics))[:5]

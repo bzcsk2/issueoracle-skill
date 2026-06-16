@@ -31,17 +31,26 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from lib import config as config_mod, env, log, render, schema
+from lib import experience as experience_mod
 import store
 
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description="Mine bug patterns from GitHub issues and review local code with evidence."
+        description="Scan, mine, and review code using OSS bug patterns."
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
+    p_scan = sub.add_parser("scan", help="Profile a local repo and find similar OSS projects")
+    p_scan.add_argument("repo_path")
+    p_scan.add_argument("--emit", default="markdown", choices=["markdown", "json"])
+    p_scan.add_argument("--max-repos", type=int, default=5)
+    p_scan.add_argument("--save-dir", default=None)
+    p_scan.add_argument("--debug", action="store_true")
+
     p_review = sub.add_parser("review", help="Review a local repo using loaded patterns")
     p_review.add_argument("repo_path")
+    p_review.add_argument("--experience", default=None, help="Path to bug experience JSON/MD")
     p_review.add_argument("--changed", action="store_true")
     p_review.add_argument("--base", default="main")
     p_review.add_argument("--languages")
@@ -53,8 +62,8 @@ def build_parser():
     p_review.add_argument("--save-dir", default=None)
     p_review.add_argument("--debug", action="store_true")
 
-    p_mine = sub.add_parser("mine", help="Mine bug patterns from a GitHub repo's closed issues")
-    p_mine.add_argument("owner_repo", help="GitHub repo as owner/repo (e.g. fastapi/fastapi)")
+    p_mine = sub.add_parser("mine", help="Mine bug patterns from GitHub repos (comma-separated)")
+    p_mine.add_argument("owner_repo", help="GitHub repo(s) as owner/repo, comma-separated (e.g. fastapi/fastapi,encode/starlette)")
     p_mine.add_argument("--label", default="bug")
     p_mine.add_argument("--state", default="closed")
     p_mine.add_argument("--max-issues", type=int, default=50)
@@ -123,6 +132,41 @@ def cmd_validate(args) -> int:
     return 1 if errors else 0
 
 
+def cmd_scan(args) -> int:
+    from lib import github_search, profile
+    logger = log.get_logger()
+    repo_path = Path(args.repo_path).resolve()
+    if not repo_path.exists():
+        print(f"Error: repo path does not exist: {repo_path}", file=sys.stderr)
+        return 1
+    logger.info(f"Scanning repo: {repo_path}")
+    prof = profile.profile_repo(str(repo_path))
+    project_type = profile.classify_project_type(prof)
+    topics = profile.infer_search_topics(prof)
+    primary_lang = prof.languages[0] if prof.languages else ""
+    cfg = env.get_config()
+    token = cfg.get("GITHUB_TOKEN") or None
+    candidates = github_search.search_similar_repos(
+        primary_lang, topics, token=token, max_results=args.max_repos,
+    )
+    profile_dict = {
+        "languages": prof.languages,
+        "frameworks": prof.frameworks,
+        "dependencies": prof.dependencies,
+        "risk_surfaces": prof.risk_surfaces,
+        "project_type": project_type,
+        "search_topics": topics,
+    }
+    result = {"profile": profile_dict, "candidates": [c.model_dump() for c in candidates]}
+    output = render.render_scan(profile_dict, [c.model_dump() for c in candidates], emit=args.emit)
+    print(output)
+    if args.save_dir:
+        save_path = Path(args.save_dir)
+        save_path.mkdir(parents=True, exist_ok=True)
+        (save_path / "scan.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    return 0
+
+
 def cmd_review(args) -> int:
     from lib import code_index, git, pack_loader, pattern_match, profile, review
 
@@ -143,6 +187,15 @@ def cmd_review(args) -> int:
     if errors:
         for e in errors:
             logger.warning(f"Pack error: {e}")
+
+    if args.experience:
+        exp_path = Path(args.experience).resolve()
+        if exp_path.exists():
+            exp_patterns = experience_mod.load_as_patterns(str(exp_path))
+            logger.info(f"Loaded {len(exp_patterns)} patterns from experience: {exp_path}")
+            patterns.extend(exp_patterns)
+        else:
+            logger.warning(f"Experience path not found: {exp_path}")
 
     if not patterns:
         logger.warning("No patterns loaded")
@@ -223,68 +276,48 @@ def cmd_mine(args) -> int:
     logger = log.get_logger()
 
     token = cfg.get("GITHUB_TOKEN") or None
-    repo = args.owner_repo
+    repos = [r.strip() for r in args.owner_repo.split(",")]
+    logger.info(f"Mining repos: {repos}")
 
-    logger.info(f"Mining closed bug issues from {repo}...")
+    all_candidates: list[schema.CandidatePattern] = []
+    total_issues = 0
+    bug_issues_count = 0
 
-    issues = github_search.search_closed_issues(
-        repo, label=args.label, max_results=args.max_issues, token=token
+    for repo in repos:
+        logger.info(f"Mining {repo}...")
+        issues = github_search.search_closed_issues(
+            repo, label=args.label, max_results=args.max_issues, token=token
+        )
+        logger.info(f"  Found {len(issues)} closed issues with label '{args.label}'")
+        bug_issues = issue_filter.filter_issues(issues)
+        logger.info(f"  After filter: {len(bug_issues)} likely-bug issues")
+        total_issues += len(issues)
+        bug_issues_count += len(bug_issues)
+        language_hint = ""
+        for issue in bug_issues:
+            prs = evidence_linker.link_issue_to_prs(issue, repo, token)
+            cand = pattern_extract.extract_candidate(issue, prs, repo, language_hint)
+            if cand:
+                all_candidates.append(cand)
+
+    logger.info(f"Total candidates across all repos: {len(all_candidates)}")
+
+    report = experience_mod.aggregate(
+        all_candidates, repos,
+        total_issues=total_issues, bug_issues=bug_issues_count,
     )
-    logger.info(f"Found {len(issues)} closed issues with label '{args.label}'")
+    report_md = experience_mod.to_markdown(report)
+    report_json = report.model_dump_json(indent=2)
 
-    bug_issues = issue_filter.filter_issues(issues)
-    logger.info(f"After filter: {len(bug_issues)} likely-bug issues")
+    bugplay_dir = store.save_experience(report_md, report_json)
 
-    candidates = []
-    issues_with_pr = 0
-    language_hint = ""
-
-    for issue in bug_issues:
-        prs = evidence_linker.link_issue_to_prs(issue, repo, token)
-        if prs:
-            issues_with_pr += 1
-        cand = pattern_extract.extract_candidate(issue, prs, repo, language_hint)
-        if cand:
-            candidates.append(cand)
-
-    result_dict = {
-        "repo": repo,
-        "mined_at": __import__("datetime").datetime.now().isoformat(),
-        "issues_searched": len(issues),
-        "issues_kept": len(bug_issues),
-        "issues_with_pr": issues_with_pr,
-        "candidates": [c.model_dump() for c in candidates],
-        "raw_dir": "",
-        "review_path": "",
-    }
-
-    mining_dir = store.save_mining(
-        json.dumps(result_dict, indent=2, default=str), repo.replace("/", "_")
-    )
-
-    for cand in candidates:
-        cand_path = mining_dir / "candidates" / f"{cand.id}.yaml"
-        try:
-            import yaml
-            cand_path.write_text(yaml.dump(cand.model_dump(), default_flow_style=False), encoding="utf-8")
-        except Exception:
-            cand_path.write_text(json.dumps(cand.model_dump(), indent=2, default=str), encoding="utf-8")
-
-    review_md = render.render_mining(result_dict, emit="markdown")
-    review_path = mining_dir / "review.md"
-    review_path.write_text(review_md, encoding="utf-8")
-
-    result_dict["raw_dir"] = str(mining_dir / "raw")
-    result_dict["review_path"] = str(review_path)
-
-    store.write_last_run({"command": "mine", "repo": repo, "candidates": len(candidates), "mining_dir": str(mining_dir)})
-
-    logger.info(f"Mining complete: {len(candidates)} candidates written to {mining_dir}")
-    logger.info(f"Review them at: {review_path}")
-    logger.info("Approved candidates can be moved to packs/ after human review.")
-
-    output = render.render_mining(result_dict, emit=args.emit)
+    result_dict = report.model_dump()
+    output = render.render_bug_experience(result_dict, emit=args.emit)
     print(output)
+
+    logger.info(f"Bug experience report saved to {bugplay_dir / 'bug-experience.md'}")
+    logger.info(f"Run `issueoracle review <repo> --experience {bugplay_dir / 'bug-experience.md'}`")
+    store.write_last_run({"command": "mine", "repos": repos, "candidates": len(all_candidates), "bugplay_dir": str(bugplay_dir)})
     return 0
 
 
@@ -297,6 +330,8 @@ def main():
             return cmd_diagnose(args)
         elif args.command == "validate":
             return cmd_validate(args)
+        elif args.command == "scan":
+            return cmd_scan(args)
         elif args.command == "review":
             return cmd_review(args)
         elif args.command == "mine":

@@ -97,6 +97,61 @@ class RenderTests(unittest.TestCase):
         output = render.render_validation(result)
         self.assertIn("bad.yaml", output)
 
+    def test_render_scan_markdown(self):
+        profile = {
+            "languages": ["Python"], "frameworks": ["FastAPI"],
+            "project_type": "web_api", "risk_surfaces": ["web"],
+            "dependencies": ["pydantic"], "search_topics": ["fastapi"],
+        }
+        candidates = [
+            {"owner_repo": "fastapi/fastapi", "stars": 79000, "description": "FastAPI framework", "url": "https://github.com/fastapi/fastapi", "topics": ["fastapi"]},
+        ]
+        output = render.render_scan(profile, candidates, emit="markdown")
+        self.assertIn("Scan Report", output)
+        self.assertIn("fastapi/fastapi", output)
+        self.assertIn("Python", output)
+        self.assertIn("FastAPI", output)
+        self.assertIn("web_api", output)
+
+    def test_render_scan_json(self):
+        profile = {"languages": ["Python"]}
+        output = render.render_scan(profile, [], emit="json")
+        parsed = json.loads(output)
+        self.assertEqual(parsed["profile"]["languages"], ["Python"])
+
+    def test_render_scan_empty_candidates(self):
+        profile = {"languages": ["Python"], "frameworks": [], "project_type": "library", "risk_surfaces": [], "dependencies": []}
+        output = render.render_scan(profile, [], emit="markdown")
+        self.assertIn("No similar projects found", output)
+
+    def test_render_bug_experience_markdown(self):
+        report = {
+            "source_repos": ["test/repo"], "mined_at": "2026-01-01T00:00:00",
+            "total_issues": 10, "bug_issues": 3,
+            "experiences": [
+                {
+                    "id": "b1", "title": "Null bug",
+                    "symptom": "Crash on null", "root_cause": "No null check",
+                    "trigger_condition": "input is None",
+                    "bad_code_signals": ["if", "null"],
+                    "fix": "Add null check",
+                    "evidence": [{"repo": "test/repo", "issue": 5, "url": "https://github.com/test/repo/issues/5", "pr_url": ""}],
+                    "bug_type": "null_bug", "language": "Python",
+                    "frameworks": [], "confidence": 0.8,
+                }
+            ],
+        }
+        output = render.render_bug_experience(report, emit="markdown")
+        self.assertIn("Bug Experience Report", output)
+        self.assertIn("Null bug", output)
+        self.assertIn("Null Bug", output)
+
+    def test_render_bug_experience_json(self):
+        report = {"source_repos": [], "experiences": []}
+        output = render.render_bug_experience(report, emit="json")
+        parsed = json.loads(output)
+        self.assertEqual(parsed["source_repos"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

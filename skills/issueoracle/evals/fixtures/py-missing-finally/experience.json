@@ -1,0 +1,24 @@
+{
+  "source_repos": ["test/repo"],
+  "mined_at": "2026-06-16T00:00:00",
+  "total_issues": 1,
+  "bug_issues": 1,
+  "experiences": [
+    {
+      "id": "missing-finally-1",
+      "title": "Session not closed on exception path",
+      "symptom": "Database connection pool exhaustion under concurrent requests",
+      "root_cause": "Session is opened but not closed when exception occurs before commit",
+      "trigger_condition": "DB session opened without finally block or context manager",
+      "bad_code_signals": ["session", "Session(", "finally:"],
+      "fix": "Wrap session usage in try/finally or use context manager",
+      "evidence": [
+        {"repo": "test/repo", "issue": 42, "url": "https://github.com/test/repo/issues/42", "pr_url": ""}
+      ],
+      "bug_type": "resource_leak",
+      "language": "Python",
+      "frameworks": ["FastAPI", "SQLAlchemy"],
+      "confidence": 0.8
+    }
+  ]
+}

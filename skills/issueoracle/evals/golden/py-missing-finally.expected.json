@@ -1,0 +1,1 @@
+{"fixture": "py-missing-finally", "bad_expected_findings": true, "good_expected_findings": true, "min_confidence": 0.3}
