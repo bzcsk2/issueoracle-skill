@@ -31,7 +31,7 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import store
-from lib import config as config_mod, env, experience as experience_mod, log, render, schema
+from lib import env, experience as experience_mod, log, render, schema
 from lib.version import __version__
 
 
