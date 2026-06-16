@@ -181,9 +181,14 @@ class BugExperience(BaseModel):
     language: str = ""
     frameworks: list[str] = Field(default_factory=list)
     confidence: float = 0.5
+    status: Literal["candidate", "reviewed", "approved", "rejected"] = "candidate"
+    review_notes: list[str] = Field(default_factory=list)
+    approved_by: str | None = None
+    approved_at: str | None = None
 
 
 class ExperienceReport(BaseModel):
+    schema_version: str = "1"
     source_repos: list[str] = Field(default_factory=list)
     mined_at: str = ""
     total_issues: int = 0

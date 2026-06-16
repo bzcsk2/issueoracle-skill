@@ -79,23 +79,53 @@ def to_markdown(report: schema.ExperienceReport) -> str:
     return "\n".join(lines)
 
 
-def load_as_patterns(path: str | Path) -> list[schema.Pattern]:
+def load_as_patterns(
+    path: str | Path,
+    include_candidates: bool = False,
+) -> tuple[list[schema.Pattern], list[str]]:
     p = Path(path)
+    warnings: list[str] = []
     if not p.exists():
-        return []
+        if p.is_absolute() and p.suffix in (".json", ".md"):
+            return [], [f"Path not found: {p}"]
+        return [], []
+
+    resolved_path: Path | None = None
     data: dict[str, Any] = {}
+
     if p.suffix == ".json":
+        resolved_path = p
         data = json.loads(p.read_text(encoding="utf-8"))
+    elif p.suffix == ".md":
+        json_candidate = p.parent / "experience.json"
+        if json_candidate.exists():
+            resolved_path = json_candidate
+            data = json.loads(json_candidate.read_text(encoding="utf-8"))
+            warnings.append(f"Loaded JSON alongside markdown: {json_candidate}")
+        else:
+            patterns = _parse_markdown_experience(p)
+            warnings.append("Parsed markdown experience (degraded, all patterns set to candidate)")
+            candidate_patterns = []
+            for pat in patterns:
+                if pat.id.startswith("exp-"):
+                    pass
+                candidate_patterns.append(pat)
+            return candidate_patterns, warnings
     else:
-        return _parse_markdown_experience(p)
+        return [], [f"Unsupported experience file format: {p.suffix}"]
 
     patterns: list[schema.Pattern] = []
     for exp_data in data.get("experiences", []):
         be = schema.BugExperience(**exp_data)
+        if be.status == "candidate" and not include_candidates:
+            continue
         pattern = _bug_experience_to_pattern(be)
         if pattern:
             patterns.append(pattern)
-    return patterns
+
+    if not patterns:
+        warnings.append("No valid experience patterns loaded (all may be candidate status)")
+    return patterns, warnings
 
 
 def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | None:

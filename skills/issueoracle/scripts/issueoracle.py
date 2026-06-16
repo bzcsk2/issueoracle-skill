@@ -63,6 +63,8 @@ def build_parser():
     p_review.add_argument("--max-findings", type=int, default=20)
     p_review.add_argument("--emit", default="markdown", choices=["markdown", "json", "compact"])
     p_review.add_argument("--save-dir", default=None)
+    p_review.add_argument("--include-candidates", action="store_true", help="Include candidate-status experience patterns")
+    p_review.add_argument("--trust-candidates", action="store_true", help="Allow candidate findings at any severity")
     p_review.add_argument("--debug", action="store_true")
 
     p_mine = sub.add_parser("mine", help="Mine bug patterns from GitHub repos (comma-separated)")
@@ -81,6 +83,26 @@ def build_parser():
     p_validate = sub.add_parser("validate", help="Validate a pattern pack directory")
     p_validate.add_argument("pack_path")
     p_validate.add_argument("--emit", default="markdown", choices=["markdown", "json"])
+
+    p_experience = sub.add_parser("experience", help="Manage bug experiences")
+    p_exp_sub = p_experience.add_subparsers(dest="experience_command", required=True)
+    p_exp_list = p_exp_sub.add_parser("list", help="List experiences by status")
+    p_exp_list.add_argument("--status", default="candidate", choices=["candidate", "reviewed", "approved", "rejected", "all"])
+    p_exp_list.add_argument("--emit", default="text", choices=["text", "json"])
+
+    p_exp_show = p_exp_sub.add_parser("show", help="Show a single experience")
+    p_exp_show.add_argument("id")
+
+    p_exp_approve = p_exp_sub.add_parser("approve", help="Approve a candidate experience")
+    p_exp_approve.add_argument("id")
+    p_exp_approve.add_argument("--review-notes", default="Approved via CLI")
+
+    p_exp_reject = p_exp_sub.add_parser("reject", help="Reject a candidate experience")
+    p_exp_reject.add_argument("id")
+    p_exp_reject.add_argument("--review-notes", default="Rejected via CLI")
+
+    p_exp_export = p_exp_sub.add_parser("export-approved", help="Export approved experiences as review-ready patterns")
+    p_exp_export.add_argument("--emit", default="text", choices=["text", "json"])
 
     sub.add_parser("diagnose", help="Print environment and pack status")
 
@@ -271,11 +293,18 @@ def cmd_review(args) -> int:
     if args.experience:
         exp_path = Path(args.experience).resolve()
         if exp_path.exists():
-            exp_patterns = experience_mod.load_as_patterns(str(exp_path))
+            include_candidates = getattr(args, "include_candidates", False)
+            exp_patterns, exp_warnings = experience_mod.load_as_patterns(str(exp_path), include_candidates=include_candidates)
+            for w in exp_warnings:
+                logger.warning(f"Experience: {w}")
             logger.info(f"Loaded {len(exp_patterns)} patterns from experience: {exp_path}")
             patterns.extend(exp_patterns)
+            if not exp_patterns and exp_warnings:
+                logger.error(f"--experience provided but no usable patterns loaded: {exp_path}")
+                return 1
         else:
-            logger.warning(f"Experience path not found: {exp_path}")
+            logger.error(f"Experience path not found: {exp_path}")
+            return 1
 
     if not patterns:
         logger.warning("No patterns loaded")
@@ -316,6 +345,12 @@ def cmd_review(args) -> int:
         threshold = args.severity_threshold or cfg.get("SEVERITY_THRESHOLD", "medium")
         max_f = args.max_findings or cfg.get("MAX_FINDINGS", 20)
         findings_list, suppressed = review.build_findings(matches, str(threshold), int(max_f))
+
+        if args.experience and not getattr(args, "trust_candidates", False):
+            for f in findings_list:
+                if f.matched_pattern.startswith("exp-"):
+                    if f.severity.value not in ("low", "medium"):
+                        f.severity = "medium"
 
         report = {
             "version": __version__,
@@ -367,6 +402,81 @@ def _count_by_severity(findings):
         s = f.severity
         counts[s] = counts.get(s, 0) + 1
     return counts
+
+
+def cmd_experience(args) -> int:
+    from lib import store
+    home = store.ensure_home()
+    exp_path = home / "bugplay" / "experience.json"
+
+    if not exp_path.exists():
+        print("No experience data found. Run `issueoracle mine` first.", file=sys.stderr)
+        return 1
+
+    report_data = json.loads(exp_path.read_text(encoding="utf-8"))
+    experiences = report_data.get("experiences", [])
+
+    cmd = args.experience_command
+
+    if cmd == "list":
+        status_filter = args.status
+        filtered = (
+            experiences
+            if status_filter == "all"
+            else [e for e in experiences if e.get("status", "candidate") == status_filter]
+        )
+        if args.emit == "json":
+            print(json.dumps(filtered, indent=2, default=str))
+        else:
+            print(f"Experiences ({status_filter}): {len(filtered)}")
+            for e in filtered:
+                status_mark = {"candidate": "?", "approved": "+", "rejected": "-", "reviewed": "~"}
+                mark = status_mark.get(e.get("status", "candidate"), "?")
+                print(f"  {mark} {e['id']}: {e['title'][:60]}")
+        return 0
+
+    if cmd == "show":
+        exp_id = args.id
+        for e in experiences:
+            if e.get("id") == exp_id:
+                print(json.dumps(e, indent=2, default=str))
+                return 0
+        print(f"Experience not found: {exp_id}", file=sys.stderr)
+        return 1
+
+    if cmd in ("approve", "reject"):
+        import datetime
+        exp_id = args.id
+        new_status = "approved" if cmd == "approve" else "rejected"
+        found = False
+        for e in experiences:
+            if e.get("id") == exp_id:
+                e["status"] = new_status
+                if cmd == "approve":
+                    e["approved_by"] = "cli"
+                    e["approved_at"] = datetime.datetime.now().isoformat()
+                e["review_notes"] = e.get("review_notes", []) + [args.review_notes]
+                found = True
+                break
+        if not found:
+            print(f"Experience not found: {exp_id}", file=sys.stderr)
+            return 1
+        report_data["experiences"] = experiences
+        exp_path.write_text(json.dumps(report_data, indent=2, default=str), encoding="utf-8")
+        print(f"Experience {exp_id} → {new_status}")
+        return 0
+
+    if cmd == "export-approved":
+        approved = [e for e in experiences if e.get("status") == "approved"]
+        if args.emit == "json":
+            print(json.dumps({"experiences": approved}, indent=2, default=str))
+        else:
+            print(f"Approved experiences: {len(approved)}")
+            for e in approved:
+                print(f"  + {e['id']}: {e['title'][:60]}")
+        return 0
+
+    return 1
 
 
 def cmd_mine(args) -> int:
@@ -449,6 +559,8 @@ def main():
             return cmd_review(args)
         elif args.command == "mine":
             return cmd_mine(args)
+        elif args.command == "experience":
+            return cmd_experience(args)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         if os.environ.get("ISSUEORACLE_DEBUG"):

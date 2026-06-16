@@ -41,7 +41,8 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
         eval_patterns = list(patterns)
         exp_file = fixture_dir / "experience.json"
         if exp_file.exists():
-            eval_patterns += experience_mod.load_as_patterns(str(exp_file))
+            exp_pats, _ = experience_mod.load_as_patterns(str(exp_file), include_candidates=True)
+            eval_patterns += exp_pats
 
         for variant in ("bad", "good"):
             variant_dir = fixture_dir / variant

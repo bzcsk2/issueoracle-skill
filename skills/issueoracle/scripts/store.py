@@ -20,9 +20,11 @@ def ensure_home() -> Path:
 def save_experience(md: str, json_data: str) -> Path:
     home = ensure_home()
     bugplay = home / "bugplay"
-    (bugplay / "bug-experience.md").write_text(md, encoding="utf-8")
-    (bugplay / "experience.json").write_text(json_data, encoding="utf-8")
-    return bugplay
+    candidates_dir = bugplay / "candidates"
+    candidates_dir.mkdir(parents=True, exist_ok=True)
+    (candidates_dir / "bug-experience.md").write_text(md, encoding="utf-8")
+    (candidates_dir / "experience.json").write_text(json_data, encoding="utf-8")
+    return candidates_dir
 
 
 def save_report(report_md: str, report_json: str, repo_slug: str) -> tuple[Path, Path]:
