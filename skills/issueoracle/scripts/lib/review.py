@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 from lib import pattern_match, schema
 
@@ -19,6 +18,8 @@ def build_findings(
 
     for m in matches:
         if m.score < threshold_val:
+            continue
+        if m.suppressed:
             continue
         f = _to_finding(m)
         if not f.file or not f.matched_pattern or not f.trigger_condition:
@@ -39,8 +40,7 @@ def _to_finding(m: pattern_match.MatchResult) -> schema.Finding:
         trigger_desc = m.pattern.trigger_conditions[0].description
 
     local_evidence = [
-        schema.LocalEvidence(line=m.chunk.start_line, description=sig)
-        for sig in m.signal_hits[:5]
+        schema.LocalEvidence(line=m.chunk.start_line, description=sig) for sig in m.signal_hits[:5]
     ]
 
     return schema.Finding(
@@ -55,7 +55,9 @@ def _to_finding(m: pattern_match.MatchResult) -> schema.Finding:
         trigger_condition=trigger_desc,
         local_evidence=local_evidence,
         oss_evidence=m.pattern.evidence,
-        suggested_fix="\n".join(m.pattern.fix_patterns) if m.pattern.fix_patterns else "Review the matched pattern.",
+        suggested_fix="\n".join(m.pattern.fix_patterns)
+        if m.pattern.fix_patterns
+        else "Review the matched pattern.",
         validation="See fix patterns above.",
         false_positive_boundary=m.pattern.false_positive_boundary,
     )

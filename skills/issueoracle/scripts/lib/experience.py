@@ -8,28 +8,35 @@ from typing import Any
 from lib import schema
 
 
-def aggregate(candidates: list[schema.CandidatePattern], source_repos: list[str],
-              total_issues: int = 0, bug_issues: int = 0) -> schema.ExperienceReport:
+def aggregate(
+    candidates: list[schema.CandidatePattern],
+    source_repos: list[str],
+    total_issues: int = 0,
+    bug_issues: int = 0,
+) -> schema.ExperienceReport:
     experiences: list[schema.BugExperience] = []
     for c in candidates:
         symptom = c.symptoms[0] if c.symptoms else ""
         trigger_desc = c.trigger_conditions[0].description if c.trigger_conditions else ""
         fix = c.fix_patterns[0] if c.fix_patterns else ""
-        experiences.append(schema.BugExperience(
-            id=c.id,
-            title=c.title,
-            symptom=symptom,
-            root_cause=c.root_cause,
-            trigger_condition=trigger_desc,
-            bad_code_signals=c.bad_code_signals,
-            fix=fix,
-            evidence=c.evidence,
-            bug_type=c.bug_type,
-            language=c.language,
-            frameworks=c.frameworks,
-            confidence=c.confidence,
-        ))
+        experiences.append(
+            schema.BugExperience(
+                id=c.id,
+                title=c.title,
+                symptom=symptom,
+                root_cause=c.root_cause,
+                trigger_condition=trigger_desc,
+                bad_code_signals=c.bad_code_signals,
+                fix=fix,
+                evidence=c.evidence,
+                bug_type=c.bug_type,
+                language=c.language,
+                frameworks=c.frameworks,
+                confidence=c.confidence,
+            )
+        )
     import datetime
+
     return schema.ExperienceReport(
         source_repos=source_repos,
         mined_at=datetime.datetime.now().isoformat(),
@@ -72,23 +79,45 @@ def to_markdown(report: schema.ExperienceReport) -> str:
     return "\n".join(lines)
 
 
-def load_as_patterns(path: str | Path) -> list[schema.Pattern]:
+def load_as_patterns(
+    path: str | Path,
+    include_candidates: bool = False,
+) -> tuple[list[schema.Pattern], list[str]]:
     p = Path(path)
+    warnings: list[str] = []
     if not p.exists():
-        return []
+        if p.is_absolute() and p.suffix in (".json", ".md"):
+            return [], [f"Path not found: {p}"]
+        return [], []
+
     data: dict[str, Any] = {}
+
     if p.suffix == ".json":
         data = json.loads(p.read_text(encoding="utf-8"))
+    elif p.suffix == ".md":
+        json_candidate = p.parent / "experience.json"
+        if json_candidate.exists():
+            data = json.loads(json_candidate.read_text(encoding="utf-8"))
+            warnings.append(f"Loaded JSON alongside markdown: {json_candidate}")
+        else:
+            patterns = _parse_markdown_experience(p)
+            warnings.append("Parsed markdown experience (degraded, all patterns set to candidate)")
+            return patterns, warnings
     else:
-        return _parse_markdown_experience(p)
+        return [], [f"Unsupported experience file format: {p.suffix}"]
 
     patterns: list[schema.Pattern] = []
     for exp_data in data.get("experiences", []):
         be = schema.BugExperience(**exp_data)
+        if be.status == "candidate" and not include_candidates:
+            continue
         pattern = _bug_experience_to_pattern(be)
         if pattern:
             patterns.append(pattern)
-    return patterns
+
+    if not patterns:
+        warnings.append("No valid experience patterns loaded (all may be candidate status)")
+    return patterns, warnings
 
 
 def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | None:
@@ -98,10 +127,24 @@ def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | Non
         return None
     triggers = []
     if be.trigger_condition:
-        triggers.append(schema.TriggerCondition(
-            description=be.trigger_condition,
-            code_signals=be.bad_code_signals[:5],
-        ))
+        triggers.append(
+            schema.TriggerCondition(
+                description=be.trigger_condition,
+                code_signals=be.bad_code_signals[:5],
+            )
+        )
+
+    typed: list[schema.TypedSignal | str] = []
+    for sig in be.bad_code_signals:
+        if isinstance(sig, schema.TypedSignal):
+            typed.append(sig)
+        elif sig.startswith("!") and len(sig) > 1:
+            typed.append(schema.TypedSignal(kind="suppress_if_present", value=sig[1:]))
+        else:
+            typed.append(sig)
+    if not any(isinstance(s, schema.TypedSignal) for s in typed):
+        pass
+
     return schema.Pattern(
         id=f"exp-{be.id}",
         title=be.title,
@@ -111,7 +154,7 @@ def _bug_experience_to_pattern(be: schema.BugExperience) -> schema.Pattern | Non
         symptoms=[be.symptom] if be.symptom else [],
         root_cause=be.root_cause,
         trigger_conditions=triggers,
-        bad_code_signals=be.bad_code_signals,
+        bad_code_signals=typed,
         fix_patterns=[be.fix] if be.fix else [],
         evidence=be.evidence,
         confidence=be.confidence,
@@ -145,39 +188,43 @@ def _parse_markdown_experience(path: Path) -> list[schema.Pattern]:
                 elif key == "evidence":
                     for part in val.split(","):
                         part = part.strip()
-                        # strip markdown link: [repo#n](url) -> repo#n
                         link_m = re.match(r"\[(.+?)\]\(.+?\)", part)
                         if link_m:
                             part = link_m.group(1)
                         m2 = re.match(r"(.+?)/(.+?)#(\d+)", part)
                         if m2:
-                            evidence_list.append(schema.OssEvidence(
-                                repo=f"{m2.group(1)}/{m2.group(2)}",
-                                issue=int(m2.group(3)),
-                                url=f"https://github.com/{m2.group(1)}/{m2.group(2)}/issues/{m2.group(3)}",
-                                pr_url="",
-                            ))
+                            evidence_list.append(
+                                schema.OssEvidence(
+                                    repo=f"{m2.group(1)}/{m2.group(2)}",
+                                    issue=int(m2.group(3)),
+                                    url=f"https://github.com/{m2.group(1)}/{m2.group(2)}/issues/{m2.group(3)}",
+                                )
+                            )
                 else:
                     fields[key] = val
         if not evidence_list:
             continue
         triggers = []
         if fields.get("trigger_condition"):
-            triggers.append(schema.TriggerCondition(
-                description=fields["trigger_condition"],
-                code_signals=sigs[:5],
-            ))
-        patterns.append(schema.Pattern(
-            id=f"exp-{title[:20]}",
-            title=title,
-            language=fields.get("language", "Python"),
-            bug_type=fields.get("bug_type", "general_bug").replace(" ", "_").lower(),
-            root_cause=fields.get("root_cause", ""),
-            trigger_conditions=triggers,
-            bad_code_signals=sigs,
-            fix_patterns=[fields.get("fix", "")] if fields.get("fix") else [],
-            evidence=evidence_list,
-            confidence=float(fields.get("confidence", 0.5)),
-            false_positive_boundary="Auto-generated from mined experience.",
-        ))
+            triggers.append(
+                schema.TriggerCondition(
+                    description=fields["trigger_condition"],
+                    code_signals=sigs[:5],
+                )
+            )
+        patterns.append(
+            schema.Pattern(
+                id=f"exp-{title[:20]}",
+                title=title,
+                language=fields.get("language", "Python"),
+                bug_type=fields.get("bug_type", "general_bug").replace(" ", "_").lower(),
+                root_cause=fields.get("root_cause", ""),
+                trigger_conditions=triggers,
+                bad_code_signals=sigs,
+                fix_patterns=[fields.get("fix", "")] if fields.get("fix") else [],
+                evidence=evidence_list,
+                confidence=float(fields.get("confidence", 0.5)),
+                false_positive_boundary="Auto-generated from mined experience.",
+            )
+        )
     return patterns

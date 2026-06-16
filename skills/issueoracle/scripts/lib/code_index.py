@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 import re
 from pathlib import Path
-from typing import Any
 
 from lib import schema
 
@@ -19,7 +18,15 @@ _LANG_SUFFIX = {
     ".rb": "Ruby",
 }
 
-_CODE_SUFFIXES = set(_LANG_SUFFIX.keys()) | {".css", ".html", ".sql", ".yaml", ".yml", ".toml", ".json"}
+_CODE_SUFFIXES = set(_LANG_SUFFIX.keys()) | {
+    ".css",
+    ".html",
+    ".sql",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".json",
+}
 
 
 def index_repo(
@@ -56,7 +63,15 @@ def _collect_code_files(repo: Path, languages: list[str]) -> list[Path]:
         if f.name.startswith("."):
             continue
         parts = f.parts
-        if any(p.startswith(".") or p == "__pycache__" or p == "node_modules" or p == ".venv" or p == "dist" or p == "build" for p in parts):
+        if any(
+            p.startswith(".")
+            or p == "__pycache__"
+            or p == "node_modules"
+            or p == ".venv"
+            or p == "dist"
+            or p == "build"
+            for p in parts
+        ):
             continue
         if str(f) not in seen:
             seen.add(str(f))
@@ -85,43 +100,51 @@ def _index_python(file_path: Path, text: str) -> list[schema.CodeChunk]:
             start = node.lineno or 0
             end = getattr(node, "end_lineno", None) or start
             code = _safe_extract_lines(text, start, end)
-            chunks.append(schema.CodeChunk(
+            chunks.append(
+                schema.CodeChunk(
+                    file=str(file_path),
+                    start_line=start,
+                    end_line=end,
+                    symbol=node.name,
+                    language="Python",
+                    imports=imports,
+                    signals=signals,
+                    code_excerpt=code,
+                )
+            )
+    if not has_function_or_class:
+        lines = text.split("\n")
+        chunks.append(
+            schema.CodeChunk(
                 file=str(file_path),
-                start_line=start,
-                end_line=end,
-                symbol=node.name,
+                start_line=1,
+                end_line=len(lines),
+                symbol=file_path.stem,
                 language="Python",
                 imports=imports,
                 signals=signals,
-                code_excerpt=code,
-            ))
-    if not has_function_or_class:
-        lines = text.split("\n")
-        chunks.append(schema.CodeChunk(
-            file=str(file_path),
-            start_line=1,
-            end_line=len(lines),
-            symbol=file_path.stem,
-            language="Python",
-            imports=imports,
-            signals=signals,
-            code_excerpt=text[:2000],
-        ))
+                code_excerpt=text[:2000],
+            )
+        )
     return chunks
 
 
 def _index_ts_js(file_path: Path, text: str) -> list[schema.CodeChunk]:
     chunks: list[schema.CodeChunk] = []
     pattern = re.compile(
-        r'(?:export\s+)?(?:async\s+)?function\s+(\w+)|'
-        r'(?:export\s+)?(?:async\s+)?\(?\s*(?:\w+\s*=\s*)?(?:async\s+)?(?:\([^)]*\))\s*(?:=>|:\s*async\s*\([^)]*\)\s*=>)|'
-        r'(?:export\s+)?class\s+(\w+)|'
-        r'(?:export\s+)?default\s+(?:function|class)\s+(\w+)|'
-        r'const\s+(\w+)\s*=\s*(?:async\s*)?\(|'
+        r"(?:export\s+)?(?:async\s+)?function\s+(\w+)|"
+        r"(?:export\s+)?(?:async\s+)?\(?\s*(?:\w+\s*=\s*)?(?:async\s+)?(?:\([^)]*\))\s*(?:=>|:\s*async\s*\([^)]*\)\s*=>)|"
+        r"(?:export\s+)?class\s+(\w+)|"
+        r"(?:export\s+)?default\s+(?:function|class)\s+(\w+)|"
+        r"const\s+(\w+)\s*=\s*(?:async\s*)?\(|"
         r'router\.(?:get|post|put|delete|patch)\s*\(\s*[\'"]',
     )
     lines = text.split("\n")
-    imports = [l for l in lines if l.startswith("import ") or l.startswith("const ") and "require(" in l]
+    imports = [
+        line
+        for line in lines
+        if line.startswith("import ") or line.startswith("const ") and "require(" in line
+    ]
     signals = _extract_signals(text)
 
     for i, line in enumerate(lines, 1):
@@ -129,17 +152,19 @@ def _index_ts_js(file_path: Path, text: str) -> list[schema.CodeChunk]:
         if m:
             name = next(g for g in m.groups() if g) or "anonymous"
             end = min(i + 30, len(lines))
-            code = "\n".join(lines[i - 1:end])
-            chunks.append(schema.CodeChunk(
-                file=str(file_path),
-                start_line=i,
-                end_line=end,
-                symbol=name,
-                language="TypeScript",
-                imports=imports,
-                signals=signals,
-                code_excerpt=code,
-            ))
+            code = "\n".join(lines[i - 1 : end])
+            chunks.append(
+                schema.CodeChunk(
+                    file=str(file_path),
+                    start_line=i,
+                    end_line=end,
+                    symbol=name,
+                    language="TypeScript",
+                    imports=imports,
+                    signals=signals,
+                    code_excerpt=code,
+                )
+            )
     return chunks
 
 
@@ -156,15 +181,17 @@ def _index_fallback(file_path: Path, text: str) -> list[schema.CodeChunk]:
         window = "\n".join(lines[start:end])
         if len(window.strip()) < 10:
             continue
-        chunks.append(schema.CodeChunk(
-            file=str(file_path),
-            start_line=start + 1,
-            end_line=end,
-            symbol=f"lines-{start+1}-{end}",
-            language="Unknown",
-            signals=signals,
-            code_excerpt=window,
-        ))
+        chunks.append(
+            schema.CodeChunk(
+                file=str(file_path),
+                start_line=start + 1,
+                end_line=end,
+                symbol=f"lines-{start + 1}-{end}",
+                language="Unknown",
+                signals=signals,
+                code_excerpt=window,
+            )
+        )
     return chunks
 
 
@@ -174,18 +201,30 @@ def _get_imports(tree: ast.AST) -> list[str]:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 imports.append(alias.name)
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.append(node.module)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imports.append(node.module)
     return imports
 
 
 def _extract_signals(text: str) -> list[str]:
     signals = []
     keywords = [
-        "await ", "async ", "session", "query(", "execute(", "fetch(",
-        ".all()", "commit()", "rollback()", "cursor", "db.",
-        "try:", "except", "finally:", ".save()", ".delete()",
+        "await ",
+        "async ",
+        "session",
+        "query(",
+        "execute(",
+        "fetch(",
+        ".all()",
+        "commit()",
+        "rollback()",
+        "cursor",
+        "db.",
+        "try:",
+        "except",
+        "finally:",
+        ".save()",
+        ".delete()",
     ]
     for kw in keywords:
         if kw in text:
@@ -195,4 +234,4 @@ def _extract_signals(text: str) -> list[str]:
 
 def _safe_extract_lines(text: str, start: int, end: int) -> str:
     lines = text.split("\n")
-    return "\n".join(lines[max(0, start - 1):min(len(lines), end)])
+    return "\n".join(lines[max(0, start - 1) : min(len(lines), end)])

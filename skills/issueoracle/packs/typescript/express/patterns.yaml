@@ -22,12 +22,24 @@ patterns:
           - "req"
           - "await"
     bad_code_signals:
-      - "async"
-      - "router.get"
-      - "router.post"
-      - "app.get"
-      - "app.post"
-      - "await"
+      - kind: required
+        value: "async"
+      - kind: required_any
+        values:
+          - "router.get"
+          - "router.post"
+          - "app.get"
+          - "app.post"
+      - kind: required
+        value: "await"
+      - kind: suppress_if_present
+        value: "next("
+      - kind: suppress_if_present
+        value: "try"
+      - kind: suppress_if_present
+        value: "catch"
+      - kind: suppress_if_present
+        value: "express-async-errors"
     fix_patterns:
       - "Wrap handler with express-async-errors or use an error wrapper"
       - "Add try-catch inside async handler with next(error)"
@@ -37,7 +49,7 @@ patterns:
         url: https://github.com/expressjs/express/issues/5028
         strength: high
     confidence: 0.7
-    false_positive_boundary: "Does not apply to Express 5 routes."
+    false_positive_boundary: "Only applies to Express 4-style async handlers without try/catch, next(error), or async error wrapper. Does not apply to Express 5 routes."
 
   - id: ts-express-auth-bypass-path
     title: Authentication middleware path pattern misconfiguration
@@ -60,10 +72,18 @@ patterns:
           - "router."
           - "admin"
     bad_code_signals:
-      - "app.use"
-      - "unless"
-      - "skip"
-      - "auth"
+      - kind: required
+        value: "app.use"
+      - kind: required_any
+        values:
+          - "auth"
+          - "authenticate"
+      - kind: optional
+        value: "unless"
+      - kind: optional
+        value: "skip"
+      - kind: suppress_if_present
+        value: "authMiddleware, adminRoutes"
     fix_patterns:
       - "Apply auth middleware globally with explicit path exclusions"
       - "Mount auth middleware before all protected routes"
@@ -73,4 +93,4 @@ patterns:
         url: https://github.com/expressjs/express/issues/4627
         strength: medium
     confidence: 0.6
-    false_positive_boundary: "May false-positive on correctly configured unless() exclusions."
+    false_positive_boundary: "Only applies when auth is conditionally skipped or excluded in a way that can expose protected routes. Suppressed for direct global or admin-scoped auth middleware mounting."

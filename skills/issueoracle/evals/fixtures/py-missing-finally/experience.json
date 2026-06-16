@@ -10,7 +10,7 @@
       "symptom": "Database connection pool exhaustion under concurrent requests",
       "root_cause": "Session is opened but not closed when exception occurs before commit",
       "trigger_condition": "DB session opened without finally block or context manager",
-      "bad_code_signals": ["session", "Session(", "finally:"],
+      "bad_code_signals": ["session", "Session(", "!finally:"],
       "fix": "Wrap session usage in try/finally or use context manager",
       "evidence": [
         {"repo": "test/repo", "issue": 42, "url": "https://github.com/test/repo/issues/42", "pr_url": ""}

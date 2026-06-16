@@ -1,64 +1,57 @@
-# IssueOracle - First Run Wizard
+# IssueOracle First-Run Setup
 
-Welcome to IssueOracle! This guide helps you get started.
+Welcome to IssueOracle! This wizard runs once to configure your environment.
 
-## Step 1: Verify Installation
+## Prerequisites
 
-```bash
-# Check that everything works
-cd issueoracle-skill
-python3 skills/issueoracle/scripts/issueoracle.py diagnose
-```
+- **Python 3.12+** — verify with `python3 --version`
+- **uv** — verify with `uv --version`; install with `pip install uv` if missing
 
-You should see environment information including Python version, pack status, and GitHub API quota.
+## Steps
 
-## Step 2: (Optional) Configure GitHub Token
+### 1. GitHub Token (Optional)
 
-For higher API rate limits (5000/hr instead of 60/hr):
+IssueOracle uses the public GitHub API by default (60 req/hr). For production use, set a token:
 
 ```bash
-# Set environment variable
-export GITHUB_TOKEN=ghp_your_token_here
-
-# Or create config file
-mkdir -p ~/.issueoracle
-cat > ~/.issueoracle/config.toml << 'EOF'
-github_token = "ghp_your_token_here"
-severity_threshold = "medium"
-EOF
+# Personal Access Token (no scopes needed for public repos)
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 ```
 
-## Step 3: Review Local Code
+Add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) or `.env`.
+
+### 2. Local-First Strategy
+
+IssueOracle stores mined patterns, experience data, and review history locally:
+
+```
+~/.issueoracle/
+  store/
+  experience/
+```
+
+No data leaves your machine unless you explicitly run `scan` (GitHub API calls).
+
+### 3. Verify Installation
 
 ```bash
-# Review current directory
-/issueoracle review .
-
-# Review with JSON output
-/issueoracle review . --emit json
-
-# Review only changed files
-/issueoracle review . --changed --base main
+issueoracle doctor
 ```
 
-## Step 4: Mine Bug Patterns
+Expected output: all checks pass (Python, skill dir, packs, git, etc.)
 
-```bash
-# Mine from a GitHub repo
-/issueoracle mine fastapi/fastapi --max-issues 10
+## Configuration
 
-# Results saved to ~/.issueoracle/mining/
-# Review candidates in the review.md file
+Edit `~/.config/issueoracle/.env`:
+
+```env
+SETUP_COMPLETE=true
+ISSUEORACLE_HOME=~/.issueoracle
+ISSUEORACLE_ALLOW_REMOTE_LLM=0
 ```
 
-## Step 5: Understand Output
+## Next Steps
 
-Each finding includes:
-- File and line numbers
-- Confidence score (0.0 - 1.0)
-- Matched pattern ID
-- Trigger condition
-- Local evidence
-- OSS evidence link
-- Suggested fix
-- False-positive boundary
+- `issueoracle review <repo-path>` — review a repository
+- `issueoracle scan <owner/repo>` — find similar issues on GitHub
+- `issueoracle diagnose` — system diagnostics

@@ -1,4 +1,5 @@
 """Evaluate pattern quality against fixtures."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lib import pack_loader
+from lib import pack_loader  # noqa: E402
 
 
 def evaluate_patterns(packs_dir: Path, emit: str = "text"):

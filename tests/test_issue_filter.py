@@ -6,9 +6,13 @@ from lib import issue_filter, schema
 
 
 class IssueFilterTests(unittest.TestCase):
-    def _make_issue(self, number: int, title: str, labels: list[str] | None = None) -> schema.GitHubIssue:
+    def _make_issue(
+        self, number: int, title: str, labels: list[str] | None = None
+    ) -> schema.GitHubIssue:
         return schema.GitHubIssue(
-            number=number, title=title, state="closed",
+            number=number,
+            title=title,
+            state="closed",
             labels=labels or [],
             url=f"https://github.com/o/r/issues/{number}",
             created_at="2024-01-01",

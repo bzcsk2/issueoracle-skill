@@ -1,1 +1,1 @@
-{"fixture": "py-missing-finally", "bad_expected_findings": true, "good_expected_findings": true, "min_confidence": 0.3}
+{"bad": {"expected_findings": true, "must_include_patterns": ["exp-missing-finally-1"], "must_include_files": ["app.py"], "min_confidence": 0.5}, "good": {"expected_findings": false, "must_not_include_patterns": ["exp-missing-finally-1"]}}

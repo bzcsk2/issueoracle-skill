@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from lib import safety, schema
 
@@ -55,27 +54,87 @@ def _extract_root_cause(issue: schema.GitHubIssue, prs: list[schema.LinkedPR]) -
 
 def _extract_signals_from_text(text: str) -> list[str]:
     signals: list[str] = []
-    keywords = ("await ", "async ", "session", "query(", "execute(", "fetch(",
-                ".all()", "commit()", "rollback()", "cursor", "db.",
-                "import ", "from ", "app.", "router.", "response",
-                "request", "config", "env.", "password", "secret",
-                "token", "auth", "cors", "middleware", "timeout",
-                "sleep(", "lock", "mutex", "semaphore",
-                "open(", "close(", "connect", "disconnect",
-                "try:", "except", "finally:", "raise",
-                "null", "undefined", "None",
-                "eval(", "exec(", "execjs", "subprocess",
-                "shell", "os.system", "sqlite3", "psycopg2",
-                "sessionmaker", "async with", "asyncio",
-                "yield", "next(", "iter", "Generator",
-                "inject", "populate", "reflect",
-                "migrate", "alembic", "schema",
-                "upload", "download", "stream",
-                "cache", "redis", "memcached",
-                "serialize", "deserialize", "pickle",
-                "redirect", "render", "template",
-                "delete(", "drop(", "truncate",
-                "grant", "revoke", "permission",
+    keywords = (
+        "await ",
+        "async ",
+        "session",
+        "query(",
+        "execute(",
+        "fetch(",
+        ".all()",
+        "commit()",
+        "rollback()",
+        "cursor",
+        "db.",
+        "import ",
+        "from ",
+        "app.",
+        "router.",
+        "response",
+        "request",
+        "config",
+        "env.",
+        "password",
+        "secret",
+        "token",
+        "auth",
+        "cors",
+        "middleware",
+        "timeout",
+        "sleep(",
+        "lock",
+        "mutex",
+        "semaphore",
+        "open(",
+        "close(",
+        "connect",
+        "disconnect",
+        "try:",
+        "except",
+        "finally:",
+        "raise",
+        "null",
+        "undefined",
+        "None",
+        "eval(",
+        "exec(",
+        "execjs",
+        "subprocess",
+        "shell",
+        "os.system",
+        "sqlite3",
+        "psycopg2",
+        "sessionmaker",
+        "async with",
+        "asyncio",
+        "yield",
+        "next(",
+        "iter",
+        "Generator",
+        "inject",
+        "populate",
+        "reflect",
+        "migrate",
+        "alembic",
+        "schema",
+        "upload",
+        "download",
+        "stream",
+        "cache",
+        "redis",
+        "memcached",
+        "serialize",
+        "deserialize",
+        "pickle",
+        "redirect",
+        "render",
+        "template",
+        "delete(",
+        "drop(",
+        "truncate",
+        "grant",
+        "revoke",
+        "permission",
     )
     for kw in keywords:
         if kw in text:
@@ -90,7 +149,9 @@ def _extract_signals(body: str, title: str = "", pr_titles: list[str] | None = N
         combined += " " + title
     if pr_titles:
         combined += " " + " ".join(pr_titles)
-    for block in re.findall(r"```(?:python|typescript|go|rust|js|ts)?\n(.*?)```", combined, re.DOTALL):
+    for block in re.findall(
+        r"```(?:python|typescript|go|rust|js|ts)?\n(.*?)```", combined, re.DOTALL
+    ):
         signals.extend(_extract_signals_from_text(block))
     signals.extend(_extract_signals_from_text(combined))
     return list(dict.fromkeys(signals))[:5]
@@ -110,16 +171,24 @@ def _extract_fixes(prs: list[schema.LinkedPR]) -> list[str]:
 def _infer_triggers(issue: schema.GitHubIssue, signals: list[str]) -> list[schema.TriggerCondition]:
     triggers: list[schema.TriggerCondition] = []
     if signals:
-        triggers.append(schema.TriggerCondition(
-            description=f"Code containing: {', '.join(signals[:3])}",
-            code_signals=signals[:3],
-        ))
+        triggers.append(
+            schema.TriggerCondition(
+                description=f"Code containing: {', '.join(signals[:3])}",
+                code_signals=signals[:3],
+            )
+        )
     if "leak" in issue.title.lower() or "session" in issue.title.lower():
-        triggers.append(schema.TriggerCondition(
-            description="Resource cleanup may be missing",
-            code_signals=["session", "close"],
-        ))
-    return triggers if triggers else [schema.TriggerCondition(description="Review the issue for context")]
+        triggers.append(
+            schema.TriggerCondition(
+                description="Resource cleanup may be missing",
+                code_signals=["session", "close"],
+            )
+        )
+    return (
+        triggers
+        if triggers
+        else [schema.TriggerCondition(description="Review the issue for context")]
+    )
 
 
 def _extract_symptoms(body: str) -> list[str]:

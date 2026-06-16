@@ -6,9 +6,13 @@ from lib import pattern_extract, schema
 
 
 class PatternExtractTests(unittest.TestCase):
-    def _make_issue(self, number: int, title: str, body: str = "", labels: list[str] | None = None) -> schema.GitHubIssue:
+    def _make_issue(
+        self, number: int, title: str, body: str = "", labels: list[str] | None = None
+    ) -> schema.GitHubIssue:
         return schema.GitHubIssue(
-            number=number, title=title, state="closed",
+            number=number,
+            title=title,
+            state="closed",
             labels=labels or [],
             body=body,
             url=f"https://github.com/o/r/issues/{number}",
@@ -16,12 +20,21 @@ class PatternExtractTests(unittest.TestCase):
         )
 
     def test_extract_candidate_basic(self):
-        issue = self._make_issue(1, "Memory leak in async session",
-                                 body="Code: ```python\nsession = AsyncSession()\nawait session.query()\n```")
-        prs = [schema.LinkedPR(
-            number=10, title="Fix: close session in finally", state="closed",
-            merged=True, url="https://github.com/o/r/pull/10", commit_sha="def",
-        )]
+        issue = self._make_issue(
+            1,
+            "Memory leak in async session",
+            body="Code: ```python\nsession = AsyncSession()\nawait session.query()\n```",
+        )
+        prs = [
+            schema.LinkedPR(
+                number=10,
+                title="Fix: close session in finally",
+                state="closed",
+                merged=True,
+                url="https://github.com/o/r/pull/10",
+                commit_sha="def",
+            )
+        ]
         cand = pattern_extract.extract_candidate(issue, prs, "o/r")
         self.assertIsNotNone(cand)
         self.assertEqual(cand.source_issue, 1)
@@ -63,10 +76,15 @@ class PatternExtractTests(unittest.TestCase):
 
     def test_extract_root_cause_from_pr(self):
         issue = self._make_issue(1, "Bug title")
-        prs = [schema.LinkedPR(
-            number=5, title="Fix: add null check before access", state="closed",
-            merged=True, url="https://github.com/o/r/pull/5",
-        )]
+        prs = [
+            schema.LinkedPR(
+                number=5,
+                title="Fix: add null check before access",
+                state="closed",
+                merged=True,
+                url="https://github.com/o/r/pull/5",
+            )
+        ]
         cause = pattern_extract._extract_root_cause(issue, prs)
         self.assertIn("add null check", cause)
 

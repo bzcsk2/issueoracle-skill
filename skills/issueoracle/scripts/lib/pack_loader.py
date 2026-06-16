@@ -20,6 +20,7 @@ def load_pack_dir(
     if not pack_path.exists():
         return patterns, errors
 
+    seen_ids: dict[str, str] = {}
     yaml_files = list(pack_path.rglob("*.yaml")) + list(pack_path.rglob("*.yml"))
     for yf in yaml_files:
         if "examples" in yf.parts:
@@ -43,11 +44,23 @@ def load_pack_dir(
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
+            pid = entry.get("id", "?")
             try:
                 pattern = schema.Pattern(**entry)
+                if pid in seen_ids:
+                    errors.append({
+                        "file": str(yf),
+                        "id": pid,
+                        "errors": [
+                            f"Duplicate pattern id: {pid}",
+                            f"  first: {seen_ids[pid]}",
+                            f"  duplicate: {yf}",
+                        ],
+                    })
+                    continue
+                seen_ids[pid] = str(yf)
                 patterns.append(pattern)
             except Exception as e:
-                pid = entry.get("id", "?")
                 errors.append({"file": str(yf), "id": pid, "errors": [str(e)]})
 
     return patterns, errors

@@ -13,22 +13,34 @@ patterns:
       - Unclosed session warnings in logs
     root_cause: Async SQLAlchemy session created with async with or get_session() but not properly closed in exception paths (missing finally block or context manager)
     trigger_conditions:
-      - description: Async function that creates a database session without try-finally
+      - description: Async function that creates a database session without guaranteed cleanup
         code_signals:
           - "async def"
-          - "session"
-          - "finally"
+          - "AsyncSession"
       - description: Route handler with inline session usage
         code_signals:
-          - "@router"
-          - "session"
+          - "execute("
           - "query("
     bad_code_signals:
-      - "session"
-      - "query("
-      - "execute("
-      - "await"
-      - "AsyncSession"
+      - kind: required
+        value: "async def"
+      - kind: required_any
+        values:
+          - "session"
+          - "db."
+          - "AsyncSession"
+      - kind: required_any
+        values:
+          - "query("
+          - "execute("
+      - kind: optional
+        value: "await"
+      - kind: suppress_if_present
+        value: "finally"
+      - kind: suppress_if_present
+        value: "async with"
+      - kind: suppress_if_present
+        value: "yield"
     fix_patterns:
       - "Wrap session usage in try-finally or use async context manager"
       - "Ensure session.close() or session.aclose() is called in finally block"
@@ -44,7 +56,7 @@ patterns:
         url: https://github.com/sqlalchemy/sqlalchemy/issues/8911
         strength: medium
     confidence: 0.75
-    false_positive_boundary: "Only applies to async database sessions. Sync sessions handled by garbage collection may false-positive. Does NOT apply to read-only transactions or connection pools with automatic return."
+    false_positive_boundary: "Only applies to async database sessions without explicit lifecycle cleanup. Suppressed when finally, async context managers, or dependency yield cleanup is present."
 
   - id: py-fastapi-cors-wildcard
     title: CORS middleware configured with wildcard origin allowing credentials
@@ -63,17 +75,20 @@ patterns:
         code_signals:
           - "CORSMiddleware"
           - "allow_origins"
-          - "*"
           - "allow_credentials"
       - description: CORS configuration with permissive settings
         code_signals:
           - "add_middleware"
           - "CORS"
     bad_code_signals:
-      - "allow_origins"
-      - "'*'"
-      - '"*"'
-      - "allow_credentials=True"
+      - kind: required_any
+        values:
+          - 'allow_origins=["*"]'
+          - "allow_origins=['*']"
+      - kind: required
+        value: "allow_credentials=True"
+      - kind: suppress_if_present
+        value: "allow_credentials=False"
     fix_patterns:
       - "Replace allow_origins=['*'] with explicit allowed origins list"
       - "Set allow_credentials=False when using wildcard origin"
@@ -84,7 +99,7 @@ patterns:
         url: https://github.com/fastapi/fastapi/issues/248
         strength: medium
     confidence: 0.8
-    false_positive_boundary: "Does not apply to public APIs that intentionally allow all origins without credentials. Valid when allow_origins=['*'] is used without allow_credentials."
+    false_positive_boundary: "Only applies when wildcard origins are combined with allow_credentials=True. Public APIs without credentials are suppressed."
 
   - id: py-fastapi-sync-in-async
     title: Blocking synchronous I/O call in async route handler
@@ -102,22 +117,31 @@ patterns:
       - description: Async route handler with sync blocking calls
         code_signals:
           - "async def"
-          - "@router"
-          - "@app"
           - "time.sleep"
-      - description: Async function using sync HTTP library
+          - "requests."
+      - description: Async function using sync HTTP or database library
         code_signals:
           - "async def"
           - "requests."
-          - "httpx"
+          - "psycopg2"
+          - "sqlite3"
     bad_code_signals:
-      - "time.sleep"
-      - "requests."
-      - "open("
-      - "read("
-      - ".read()"
-      - "psycopg2"
-      - "sqlite3"
+      - kind: required
+        value: "async def"
+      - kind: required_any
+        values:
+          - "time.sleep"
+          - "requests."
+          - "psycopg2"
+          - "sqlite3"
+      - kind: suppress_if_present
+        value: "await asyncio.sleep"
+      - kind: suppress_if_present
+        value: "httpx.AsyncClient"
+      - kind: suppress_if_present
+        value: "asyncio.to_thread"
+      - kind: suppress_if_present
+        value: "run_in_executor"
     fix_patterns:
       - "Replace requests with httpx.AsyncClient"
       - "Replace time.sleep with asyncio.sleep"
@@ -128,96 +152,4 @@ patterns:
         url: https://github.com/fastapi/fastapi/issues/218
         strength: medium
     confidence: 0.7
-    false_positive_boundary: "Does not apply to non-blocking calls or CPU-bound tasks run in executor. False positives on fast sync calls that complete in <1ms."
-
-  - id: ts-express-error-handling-missing
-    title: Express async route handler without error wrapper
-    language: TypeScript
-    frameworks:
-      - express
-    bug_type: unhandled_rejection
-    severity_hint: high
-    symptoms:
-      - Unhandled promise rejection on async route errors
-      - Express process crash on async error
-      - Missing error middleware catches async rejections
-    root_cause: Express 4 does not catch promise rejections from async route handlers. Async errors result in unhandled rejections unless wrapped in try-catch or a wrapper middleware
-    trigger_conditions:
-      - description: Async route handler without try-catch or wrapper
-        code_signals:
-          - "async"
-          - "router."
-          - "app."
-          - "catch"
-      - description: Async handler with no error handling
-        code_signals:
-          - "async (req"
-          - "=>"
-          - "await"
-    bad_code_signals:
-      - "async"
-      - "req, res"
-      - "router.get"
-      - "router.post"
-      - "app.get"
-      - "app.post"
-      - "await"
-    fix_patterns:
-      - "Wrap handler with express-async-errors or use a higher-order error wrapper"
-      - "Add try-catch inside async handler with next(error)"
-      - "Migrate to Express 5 which handles async errors natively"
-    evidence:
-      - repo: expressjs/express
-        issue: 5028
-        url: https://github.com/expressjs/express/issues/5028
-        strength: high
-      - repo: expressjs/express
-        issue: 3379
-        url: https://github.com/expressjs/express/issues/3379
-        strength: medium
-    confidence: 0.7
-    false_positive_boundary: "Does not apply to Express 5 routes (native async error handling). False positive if handler explicitly wraps in try-catch with next()."
-
-  - id: ts-express-auth-bypass-path
-    title: Authentication middleware path pattern misconfiguration
-    language: TypeScript
-    frameworks:
-      - express
-    bug_type: auth_bypass
-    severity_hint: critical
-    symptoms:
-      - Unauthenticated access to protected routes
-      - Auth middleware mounted after unprotected routes
-      - Path pattern mismatch allowing access to admin endpoints
-    root_cause: Authentication middleware applied with incorrect path pattern or mounted after routes that should be protected, allowing unauthenticated access
-    trigger_conditions:
-      - description: Auth middleware with potentially incorrect path filtering
-        code_signals:
-          - "app.use"
-          - "auth"
-          - "authenticate"
-          - "unless"
-      - description: Route definition without auth middleware
-        code_signals:
-          - "router."
-          - "admin"
-          - "protected"
-          - "auth"
-    bad_code_signals:
-      - "app.use"
-      - "unless"
-      - ".unless"
-      - "skip"
-      - "exclude"
-      - "auth"
-    fix_patterns:
-      - "Apply auth middleware globally and use explicit path exclusions"
-      - "Ensure auth middleware is mounted before all protected routes"
-      - "Use per-route middleware instead of global unless patterns"
-    evidence:
-      - repo: expressjs/express
-        issue: 4627
-        url: https://github.com/expressjs/express/issues/4627
-        strength: medium
-    confidence: 0.6
-    false_positive_boundary: "Pattern may false-positive on correctly configured unless() exclusions. Manual review of excluded paths required."
+    false_positive_boundary: "Only applies to blocking synchronous calls made directly inside async handlers. Suppressed when async alternatives or executor handoff are used."

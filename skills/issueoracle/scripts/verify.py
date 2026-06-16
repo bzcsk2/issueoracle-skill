@@ -10,14 +10,12 @@ def verify():
     scripts_dir = Path(__file__).parent
     skill_dir = scripts_dir.parent
 
-    # Check Python version
-    if sys.version_info < (3, 12):
-        errors.append(f"Python 3.12+ required, got {sys.version_info}")
-
     # Check critical files exist
     critical = [
         skill_dir / "SKILL.md",
         scripts_dir / "issueoracle.py",
+        scripts_dir / "build_skill.py",
+        scripts_dir / "lib" / "version.py",
         scripts_dir / "lib" / "schema.py",
         scripts_dir / "lib" / "env.py",
         scripts_dir / "lib" / "pack_loader.py",
@@ -34,6 +32,7 @@ def verify():
     sys.path.insert(0, str(scripts_dir))
     try:
         from lib import schema
+
         # Test round-trip
         p = schema.Pattern(
             id="test-pattern",

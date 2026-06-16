@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
 
 import store
@@ -11,11 +11,13 @@ class StoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         import os
+
         os.environ["ISSUEORACLE_HOME"] = str(self.tmp)
 
     def tearDown(self):
-        import shutil
         import os
+        import shutil
+
         shutil.rmtree(self.tmp, ignore_errors=True)
         os.environ.pop("ISSUEORACLE_HOME", None)
 

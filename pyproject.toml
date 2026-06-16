@@ -1,6 +1,6 @@
 [project]
 name = "issueoracle-skill"
-version = "0.2.1"
+version = "0.4.0"
 description = "Review local code using OSS issue-derived bug patterns with concrete evidence."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -13,7 +13,23 @@ dependencies = [
 dev = [
     "pytest>=9.0.3,<10",
     "pytest-cov>=7,<8",
+    "ruff>=0.15.17",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["skills/issueoracle/scripts", "tests"]
+exclude = ["skills/issueoracle/evals/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -36,16 +52,3 @@ show_missing = true
 omit = [
     "dist/*",
 ]
-
-[tool.ruff]
-target-version = "py312"
-line-length = 100
-src = ["skills/issueoracle/scripts", "tests"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-line-ending = "auto"

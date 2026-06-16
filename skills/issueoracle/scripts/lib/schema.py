@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -22,6 +22,12 @@ class TriggerCondition(BaseModel):
     code_signals: list[str] = Field(default_factory=list)
 
 
+class TypedSignal(BaseModel):
+    kind: Literal["required", "required_any", "negative", "suppress_if_present", "optional"]
+    value: str = ""
+    values: list[str] = Field(default_factory=list)
+
+
 class Pattern(BaseModel):
     id: str
     title: str
@@ -32,11 +38,30 @@ class Pattern(BaseModel):
     symptoms: list[str] = Field(default_factory=list)
     root_cause: str
     trigger_conditions: list[TriggerCondition] = Field(default_factory=list)
-    bad_code_signals: list[str] = Field(default_factory=list)
+    bad_code_signals: list[TypedSignal | str] = Field(default_factory=list)
     fix_patterns: list[str] = Field(default_factory=list)
     evidence: list[OssEvidence] = Field(default_factory=list)
     confidence: float = Field(ge=0.0, le=1.0)
     false_positive_boundary: str = ""
+
+    @field_validator("bad_code_signals", mode="before")
+    @classmethod
+    def normalize_signals(cls, v):
+        if isinstance(v, list):
+            result = []
+            for item in v:
+                if isinstance(item, dict) and "kind" in item:
+                    result.append(TypedSignal(**item))
+                elif isinstance(item, str):
+                    result.append(item)
+                elif isinstance(item, dict):
+                    result.append(TypedSignal(kind="required", value=item.get("value", str(item))))
+                elif isinstance(item, TypedSignal):
+                    result.append(item)
+                else:
+                    result.append(str(item))
+            return result
+        return v
 
     @field_validator("evidence")
     @classmethod
@@ -166,6 +191,11 @@ class RepoCandidate(BaseModel):
     description: str = ""
     url: str = ""
     topics: list[str] = Field(default_factory=list)
+    score: float = 0.0
+    matched_topics: list[str] = Field(default_factory=list)
+    matched_frameworks: list[str] = Field(default_factory=list)
+    last_pushed_at: str | None = None
+    open_issues_count: int | None = None
 
 
 class BugExperience(BaseModel):
@@ -181,9 +211,14 @@ class BugExperience(BaseModel):
     language: str = ""
     frameworks: list[str] = Field(default_factory=list)
     confidence: float = 0.5
+    status: Literal["candidate", "reviewed", "approved", "rejected"] = "candidate"
+    review_notes: list[str] = Field(default_factory=list)
+    approved_by: str | None = None
+    approved_at: str | None = None
 
 
 class ExperienceReport(BaseModel):
+    schema_version: str = "1"
     source_repos: list[str] = Field(default_factory=list)
     mined_at: str = ""
     total_issues: int = 0

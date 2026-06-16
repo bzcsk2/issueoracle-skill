@@ -20,9 +20,11 @@ def ensure_home() -> Path:
 def save_experience(md: str, json_data: str) -> Path:
     home = ensure_home()
     bugplay = home / "bugplay"
-    (bugplay / "bug-experience.md").write_text(md, encoding="utf-8")
-    (bugplay / "experience.json").write_text(json_data, encoding="utf-8")
-    return bugplay
+    candidates_dir = bugplay / "candidates"
+    candidates_dir.mkdir(parents=True, exist_ok=True)
+    (candidates_dir / "bug-experience.md").write_text(md, encoding="utf-8")
+    (candidates_dir / "experience.json").write_text(json_data, encoding="utf-8")
+    return candidates_dir
 
 
 def save_report(report_md: str, report_json: str, repo_slug: str) -> tuple[Path, Path]:
@@ -52,3 +54,46 @@ def write_last_run(payload: dict) -> None:
     (home / "last-run.json").write_text(
         json.dumps(payload, indent=2, default=str), encoding="utf-8"
     )
+
+
+def create_run(repos: list[str]) -> Path:
+    import datetime
+    home = ensure_home()
+    run_id = f"mine-{datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}"
+    run_dir = home / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    progress = {
+        "run_id": run_id,
+        "repos": repos,
+        "completed_repos": [],
+        "completed_issues": [],
+        "failed_issues": [],
+        "status": "running",
+    }
+    (run_dir / "progress.json").write_text(json.dumps(progress, indent=2), encoding="utf-8")
+    return run_dir
+
+
+def load_run(run_dir: Path) -> dict:
+    return json.loads((run_dir / "progress.json").read_text(encoding="utf-8"))
+
+
+def save_run(run_dir: Path, progress: dict) -> None:
+    (run_dir / "progress.json").write_text(json.dumps(progress, indent=2), encoding="utf-8")
+
+
+def append_run_line(run_dir: Path, name: str, line: str) -> None:
+    with open(run_dir / name, "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+
+def find_last_run_dir() -> Path | None:
+    home = ensure_home()
+    runs_dir = home / "runs"
+    if not runs_dir.exists():
+        return None
+    dirs = sorted(runs_dir.iterdir(), reverse=True)
+    for d in dirs:
+        if d.is_dir() and (d / "progress.json").exists():
+            return d
+    return None

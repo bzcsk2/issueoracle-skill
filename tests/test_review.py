@@ -14,24 +14,35 @@ class ReviewTests(unittest.TestCase):
             bug_type="resource_leak",
             root_cause="Session not closed",
             severity_hint="high",
-            evidence=[schema.OssEvidence(repo="o/r", url="https://github.com/o/r/issues/1", strength="high")],
+            evidence=[
+                schema.OssEvidence(
+                    repo="o/r", url="https://github.com/o/r/issues/1", strength="high"
+                )
+            ],
             confidence=0.8,
-            trigger_conditions=[schema.TriggerCondition(
-                description="async function with database query",
-                code_signals=["async", "session"],
-            )],
+            trigger_conditions=[
+                schema.TriggerCondition(
+                    description="async function with database query",
+                    code_signals=["async", "session"],
+                )
+            ],
             bad_code_signals=["session", "query("],
             fix_patterns=["Add finally block"],
             false_positive_boundary="Only for async functions",
         )
         self.chunk = schema.CodeChunk(
-            file="app.py", start_line=1, end_line=10,
-            symbol="get_data", language="Python",
+            file="app.py",
+            start_line=1,
+            end_line=10,
+            symbol="get_data",
+            language="Python",
             signals=["session", "query(", "async"],
             code_excerpt="async def get_data():\n    session.query()",
         )
         self.profile = schema.RepoProfile(
-            repo_path=".", languages=["Python"], frameworks=["fastapi"],
+            repo_path=".",
+            languages=["Python"],
+            frameworks=["fastapi"],
         )
 
     def test_build_findings_empty_matches(self):
@@ -53,8 +64,11 @@ class ReviewTests(unittest.TestCase):
 
     def test_build_findings_suppresses_low_confidence(self):
         low_pattern = schema.Pattern(
-            id="low-pattern", title="Low", language="Python",
-            bug_type="test", root_cause="test",
+            id="low-pattern",
+            title="Low",
+            language="Python",
+            bug_type="test",
+            root_cause="test",
             evidence=[schema.OssEvidence(repo="o/r", url="https://github.com/o/r/issues/1")],
             confidence=0.1,
             bad_code_signals=["session"],

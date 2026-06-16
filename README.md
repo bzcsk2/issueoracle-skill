@@ -27,6 +27,16 @@ Project-scoped install:
 npx skills add bzcsk2/issueoracle-skill
 ```
 
+Update:
+
+```bash
+npx skills update issueoracle
+```
+
+### Claude Code marketplace
+
+Planned. Until IssueOracle is accepted into marketplace, use `npx skills add`.
+
 ### Manual install for Claude Code
 
 ```bash
@@ -144,6 +154,31 @@ A finding is only reported when IssueOracle has a matched bug pattern, concrete 
 
 Mined experiences are saved to `~/.issueoracle/bugplay/experience.json` for the review engine and `~/.issueoracle/bugplay/bug-experience.md` as a narrative document organized by bug type.
 
+Resume an interrupted mining session:
+
+```bash
+/issueoracle mine fastapi/fastapi,encode/starlette --resume --max-issues 30
+```
+
+### Manage bug experiences
+
+```bash
+# List all bug experiences (candidate + approved + rejected)
+/issueoracle experience list
+
+# Show details of a specific experience
+/issueoracle experience show exp-missing-finally-1
+
+# Approve a candidate experience for use in review
+/issueoracle experience approve exp-missing-finally-1
+
+# Reject a false-positive experience
+/issueoracle experience reject exp-missing-finally-1
+
+# Export only approved experiences for shared use
+/issueoracle experience export-approved
+```
+
 ### Validate packs
 
 ```bash
@@ -157,12 +192,18 @@ Mined experiences are saved to `~/.issueoracle/bugplay/experience.json` for the 
 /issueoracle diagnose
 ```
 
+### Doctor
+
+```bash
+/issueoracle doctor
+```
+
 ## Development
 
 ```bash
 uv sync --all-groups
-uvx ruff format --check .
-uvx ruff check .
+uv run ruff format --check .
+uv run ruff check .
 uv run pytest tests/ -q
 uv run python skills/issueoracle/scripts/issueoracle.py diagnose
 uv run python skills/issueoracle/evals/run_eval.py
@@ -178,11 +219,10 @@ uv run python skills/issueoracle/scripts/build_skill.py
 
 ## Safety model
 
-- Local code is not uploaded by default.
+- Local code stays local by default.
 - GitHub issue and PR text is treated as untrusted input.
-- IssueOracle does not execute commands copied from issues or PRs.
 - IssueOracle does not auto-fix code, create commits, or open PRs.
-- Raw issue bodies and PR diffs are not redistributed as pattern packs.
+- Pattern packs store structured evidence links and summaries, not bulk source material.
 
 ## Requirements
 

@@ -13,6 +13,20 @@ elif _config_override:
 else:
     CONFIG_DIR = Path.home() / ".issueoracle"
 
+NUX_ENV_DIR = Path.home() / ".config" / "issueoracle"
+NUX_ENV_PATH = NUX_ENV_DIR / ".env"
+
+
+def is_first_run() -> bool:
+    return not NUX_ENV_PATH.exists() or "SETUP_COMPLETE=true" not in NUX_ENV_PATH.read_text()
+
+
+def mark_setup_complete() -> None:
+    NUX_ENV_DIR.mkdir(parents=True, exist_ok=True)
+    content = "SETUP_COMPLETE=true\nISSUEORACLE_HOME=~/.issueoracle\nISSUEORACLE_ALLOW_REMOTE_LLM=0\n"
+    NUX_ENV_PATH.write_text(content, encoding="utf-8")
+
+
 def get_issueoracle_home() -> Path:
     override = os.environ.get("ISSUEORACLE_HOME")
     return Path(override) if override else (Path.home() / ".issueoracle")
@@ -48,8 +62,7 @@ def get_config() -> dict[str, Any]:
             or merged.get("severity_threshold", "medium")
         ),
         "MAX_FINDINGS": int(
-            os.environ.get("ISSUEORACLE_MAX_FINDINGS")
-            or merged.get("max_findings", 20)
+            os.environ.get("ISSUEORACLE_MAX_FINDINGS") or merged.get("max_findings", 20)
         ),
     }
     return config

@@ -1,1 +1,1 @@
-{"fixture": "ts-insecure-random", "bad_expected_findings": false, "good_expected_findings": false, "min_confidence": 0.0}
+{"bad": {"expected_findings": false}, "good": {"expected_findings": false}}
