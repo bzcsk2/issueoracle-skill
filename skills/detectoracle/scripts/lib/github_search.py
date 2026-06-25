@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 from lib import http, safety, schema
 
 GITHUB_API = "https://api.github.com"
+_DEFAULT_ACTIVE_WINDOW_DAYS = 548
 
 
 def _request(path: str, token: str | None, params: dict | None = None, method: str = "GET") -> Any:
@@ -29,6 +31,17 @@ def _paginated_get(path: str, token: str | None, params: dict | None = None) -> 
             all_data.append(raw)
             break
     return all_data
+
+
+def _active_since_date(
+    *,
+    now: datetime.datetime | None = None,
+    window_days: int = _DEFAULT_ACTIVE_WINDOW_DAYS,
+) -> str:
+    current = now or datetime.datetime.now(datetime.UTC)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=datetime.UTC)
+    return (current.date() - datetime.timedelta(days=window_days)).isoformat()
 
 
 def search_closed_issues(
@@ -81,7 +94,8 @@ def search_similar_repos(
         kw = framework_keywords[0]
         queries.append((f"language:{language} {kw} stars:>50", 50))
 
-    queries.append((f"language:{language} stars:>20 pushed:>2025-01-01", 20))
+    active_since = _active_since_date()
+    queries.append((f"language:{language} stars:>20 pushed:>{active_since}", 20))
 
     for q, _min_stars in queries:
         data = _request(
@@ -109,8 +123,6 @@ def search_similar_repos(
     candidates = list(seen.values())
 
     max_stars = max((c.stars for c in candidates), default=1)
-    import datetime
-
     now = datetime.datetime.now().timestamp()
     for c in candidates:
         topic_overlap = len(c.matched_topics) / max(len(topics), 1)
