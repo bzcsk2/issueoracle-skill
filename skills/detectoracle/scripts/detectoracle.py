@@ -162,7 +162,12 @@ def cmd_experience(args) -> int:
 
 
 def cmd_mine(args) -> int:
-    from lib import evidence_linker, github_search, issue_filter, pattern_extract
+    from lib import evidence_linker, github_search, http, issue_filter, pattern_extract
+
+    http.configure_cache(
+        offline_cache=args.offline_cache,
+        cache_ttl_seconds=args.cache_ttl,
+    )
 
     cfg = env.get_config()
     if args.debug:

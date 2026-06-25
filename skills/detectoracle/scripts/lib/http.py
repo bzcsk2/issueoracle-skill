@@ -17,6 +17,38 @@ from lib.version import USER_AGENT
 GITHUB_API = "https://api.github.com"
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
+_DEFAULT_CACHE_TTL_SECONDS = 3600
+_CACHE_TTL_SECONDS = _DEFAULT_CACHE_TTL_SECONDS
+_OFFLINE_CACHE = False
+
+
+def parse_cache_ttl_seconds(value: int | str) -> int:
+    if isinstance(value, int):
+        seconds = value
+    else:
+        text = value.strip().lower()
+        if text.isdigit():
+            seconds = int(text)
+        else:
+            unit = text[-1:] if text else ""
+            number = text[:-1]
+            multipliers = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+            if unit not in multipliers or not number.isdigit():
+                raise ValueError(f"Invalid cache TTL: {value!r}")
+            seconds = int(number) * multipliers[unit]
+    if seconds < 1:
+        raise ValueError("Cache TTL must be positive")
+    return seconds
+
+
+def configure_cache(
+    *,
+    offline_cache: bool = False,
+    cache_ttl_seconds: int | str = _DEFAULT_CACHE_TTL_SECONDS,
+) -> None:
+    global _CACHE_TTL_SECONDS, _OFFLINE_CACHE
+    _OFFLINE_CACHE = offline_cache
+    _CACHE_TTL_SECONDS = parse_cache_ttl_seconds(cache_ttl_seconds)
 
 
 def _headers(token: str | None, etag: str = "") -> dict[str, str]:
@@ -37,7 +69,7 @@ def get_json(
     token: str | None = None,
     params: dict | None = None,
     use_cache: bool = True,
-    cache_ttl: int = 3600,
+    cache_ttl: int | str | None = None,
 ) -> tuple[Any, dict[str, str | int]]:
     url = f"{GITHUB_API}{path}"
     if params:
@@ -48,10 +80,15 @@ def get_json(
         cached = cache.get("GET", url)
         if cached:
             return cached.get("_data", cached), {"cached": True, "source": "cache"}
+        if _OFFLINE_CACHE:
+            raise urllib.error.URLError(f"Offline cache miss: {url}")
+    elif _OFFLINE_CACHE:
+        raise urllib.error.URLError(f"Offline cache disabled network access: {url}")
 
     etag = cache.get_etag("GET", url) if use_cache else ""
     last_err: Exception | None = None
     rate_info: dict[str, str | int] = {}
+    ttl_seconds = _CACHE_TTL_SECONDS if cache_ttl is None else parse_cache_ttl_seconds(cache_ttl)
 
     for attempt in range(_MAX_RETRIES):
         try:
@@ -73,7 +110,7 @@ def get_json(
                 if use_cache and resp.status == 200:
                     etag_val = resp.headers.get("ETag", "")
                     cache_payload = {"_data": data, "_etag": etag_val}
-                    cache.set("GET", url, cache_payload, ttl_seconds=cache_ttl)
+                    cache.set("GET", url, cache_payload, ttl_seconds=ttl_seconds)
 
                 return data, rate_info
 
