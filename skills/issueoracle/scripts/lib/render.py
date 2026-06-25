@@ -203,6 +203,6 @@ def render_doctor(data: dict) -> str:
         lines.append(f"  {icon}  {msg}")
     if data.get("suggested"):
         lines.append("")
-        lines.append(f"Suggested next command:")
+        lines.append("Suggested next command:")
         lines.append(f"  {data['suggested']}")
     return "\n".join(lines)

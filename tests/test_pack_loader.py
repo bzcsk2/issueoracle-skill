@@ -93,7 +93,8 @@ class PackLoaderTests(unittest.TestCase):
         self.assertTrue(dup_found)
 
     def test_duplicate_pattern_id_fails_review_load(self):
-        import subprocess, sys
+        import subprocess
+        import sys
         from pathlib import Path
 
         packs_dir = Path(__file__).resolve().parent.parent / "skills" / "issueoracle" / "packs"

@@ -8,7 +8,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from io import BytesIO
 from typing import Any
 
 from lib import cache

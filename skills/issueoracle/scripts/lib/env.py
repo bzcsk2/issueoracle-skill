@@ -5,7 +5,6 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-
 NEW_CONFIG_DIR = Path.home() / ".detectoracle"
 LEGACY_CONFIG_DIR = Path.home() / ".issueoracle"
 NEW_NUX_ENV_DIR = Path.home() / ".config" / "detectoracle"

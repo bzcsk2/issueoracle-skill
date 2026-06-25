@@ -82,11 +82,7 @@ def _match_signals(
         values = _signal_values(signal)
         matched = [value for value in values if _contains(value, chunk_text, chunk_signals)]
 
-        if signal.kind == "required":
-            if not matched:
-                return [], suppressed, score_bonus
-            hits.extend(matched)
-        elif signal.kind == "required_any":
+        if signal.kind == "required" or signal.kind == "required_any":
             if not matched:
                 return [], suppressed, score_bonus
             hits.extend(matched)

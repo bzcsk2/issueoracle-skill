@@ -363,7 +363,8 @@ class TestPhase3ExperienceStatus:
         assert has_degraded
 
     def test_review_rejects_missing_experience_path(self, tmp_path: Path, monkeypatch):
-        import subprocess, sys
+        import subprocess
+        import sys
 
         result = subprocess.run(
             [
@@ -387,7 +388,8 @@ class TestPhase3ExperienceStatus:
         assert result.returncode != 0
 
     def test_review_rejects_empty_experience(self, tmp_path: Path):
-        import subprocess, sys
+        import subprocess
+        import sys
 
         empty_exp = tmp_path / "empty.json"
         empty_exp.write_text('{"experiences": []}', encoding="utf-8")
