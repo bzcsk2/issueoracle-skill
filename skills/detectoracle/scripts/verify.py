@@ -48,33 +48,33 @@ def _verify_bundle_archive(bundle_path: Path) -> list[str]:
     try:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             names = set(zf.namelist())
-            missing = sorted(REQUIRED_BUNDLE_ENTRIES - names)
-            if missing:
-                errors.append(f"Bundle missing required entries: {', '.join(missing)}")
-            if not any(name.startswith("packs/") for name in names):
-                errors.append("Bundle missing packs/ content")
-            if not any(name.startswith("references/") for name in names):
-                errors.append("Bundle missing references/ content")
+        missing = sorted(REQUIRED_BUNDLE_ENTRIES - names)
+        if missing:
+            errors.append(f"Bundle missing required entries: {', '.join(missing)}")
+        if not any(name.startswith("packs/") for name in names):
+            errors.append("Bundle missing packs/ content")
+        if not any(name.startswith("references/") for name in names):
+            errors.append("Bundle missing references/ content")
 
-            if errors:
-                return errors
+        if errors:
+            return errors
 
-            with tempfile.TemporaryDirectory() as tmp:
-                extract_dir = Path(tmp) / "skill"
-                zf.extractall(extract_dir)
-                script = extract_dir / "scripts" / "detectoracle.py"
-                packs_dir = extract_dir / "packs"
+        with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(bundle_path, "r") as zf:
+            extract_dir = Path(tmp) / "skill"
+            zf.extractall(extract_dir)
+            script = extract_dir / "scripts" / "detectoracle.py"
+            packs_dir = extract_dir / "packs"
 
-                diagnose = _run([sys.executable, str(script), "diagnose"], cwd=extract_dir)
-                if diagnose.returncode != 0:
-                    errors.append(f"Bundle diagnose failed: {_summarize_failure(diagnose)}")
+            diagnose = _run([sys.executable, str(script), "diagnose"], cwd=extract_dir)
+            if diagnose.returncode != 0:
+                errors.append(f"Bundle diagnose failed: {_summarize_failure(diagnose)}")
 
-                validate = _run(
-                    [sys.executable, str(script), "validate", str(packs_dir)],
-                    cwd=extract_dir,
-                )
-                if validate.returncode != 0:
-                    errors.append(f"Bundle validate failed: {_summarize_failure(validate)}")
+            validate = _run(
+                [sys.executable, str(script), "validate", str(packs_dir)],
+                cwd=extract_dir,
+            )
+            if validate.returncode != 0:
+                errors.append(f"Bundle validate failed: {_summarize_failure(validate)}")
     except zipfile.BadZipFile as e:
         errors.append(f"Bundle is not a valid zip archive: {e}")
     except Exception as e:
@@ -143,9 +143,9 @@ def verify():
         for e in errors:
             print(f"  - {e}")
         return 1
-    else:
-        print("DETECTORACLE VERIFY PASSED")
-        return 0
+
+    print("DETECTORACLE VERIFY PASSED")
+    return 0
 
 
 if __name__ == "__main__":
