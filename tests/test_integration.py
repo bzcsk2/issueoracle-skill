@@ -11,12 +11,11 @@ from pathlib import Path
 class IntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        scripts_dir = (
-            Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "scripts"
-        )
+        root = Path(__file__).resolve().parent.parent
+        scripts_dir = root / "skills" / "detectoracle" / "scripts"
         cls.script = scripts_dir / "issueoracle.py"
         cls.detectoracle_script = scripts_dir / "detectoracle.py"
-        cls.packs = Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "packs"
+        cls.packs = root / "skills" / "detectoracle" / "packs"
         cls.python = sys.executable
 
     def _run(self, *args) -> subprocess.CompletedProcess:
@@ -28,7 +27,9 @@ class IntegrationTests(unittest.TestCase):
         )
 
     def _run_detectoracle(
-        self, *args, env: dict[str, str] | None = None
+        self,
+        *args,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess:
         return subprocess.run(
             [self.python, str(self.detectoracle_script)] + list(args),
