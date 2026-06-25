@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import gzip
 import json
 import time
@@ -81,10 +82,8 @@ def get_json(
             body = e.read()
             if e.headers.get("Content-Encoding", "") == "gzip":
                 body = gzip.decompress(body)
-            try:
-                err_data = json.loads(body.decode("utf-8"))
-            except Exception:
-                err_data = {}
+            with contextlib.suppress(Exception):
+                json.loads(body.decode("utf-8"))
 
             rate_info = {
                 "remaining": e.headers.get("X-RateLimit-Remaining", "?"),
@@ -100,10 +99,7 @@ def get_json(
 
             if e.code in (403, 429):
                 retry_after = _parse_retry_after(e.headers.get("Retry-After", ""))
-                if retry_after:
-                    delay = retry_after
-                else:
-                    delay = _BASE_DELAY * (2**attempt)
+                delay = retry_after or _BASE_DELAY * 2**attempt
                 if attempt < _MAX_RETRIES - 1:
                     time.sleep(min(delay, 60))
                     continue

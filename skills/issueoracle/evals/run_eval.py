@@ -78,7 +78,8 @@ def run_eval(fixtures_dir: Path, golden_dir: Path, packs_dir: Path, emit: str = 
             if has_findings != exp_findings:
                 variant_ok = False
                 detail_errors.append(
-                    f"expected_findings={exp_findings}, got={has_findings} ({len(findings)} findings)"
+                    f"expected_findings={exp_findings}, "
+                    f"got={has_findings} ({len(findings)} findings)"
                 )
 
             for pid in must_include:

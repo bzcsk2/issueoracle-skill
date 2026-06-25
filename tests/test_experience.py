@@ -354,7 +354,16 @@ class TestPhase3ExperienceStatus:
         assert len(p.evidence) == 1
 
     def test_markdown_fallback_marks_candidate(self, tmp_path: Path):
-        md = "## Test (1 bugs)\n\n### 1. Fallback test\n- **Symptom**: test\n- **Root cause**: test\n- **Trigger condition**: test\n- **Bad code signals**: `sig1`\n- **Fix**: fix\n- **Evidence**: test/repo#1\n"
+        md = (
+            "## Test (1 bugs)\n\n"
+            "### 1. Fallback test\n"
+            "- **Symptom**: test\n"
+            "- **Root cause**: test\n"
+            "- **Trigger condition**: test\n"
+            "- **Bad code signals**: `sig1`\n"
+            "- **Fix**: fix\n"
+            "- **Evidence**: test/repo#1\n"
+        )
         f = tmp_path / "fallback.md"
         f.write_text(md, encoding="utf-8")
         patterns, warnings = exp_mod.load_as_patterns(str(f))

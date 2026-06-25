@@ -83,7 +83,7 @@ def search_similar_repos(
 
     queries.append((f"language:{language} stars:>20 pushed:>2025-01-01", 20))
 
-    for q, min_stars in queries:
+    for q, _min_stars in queries:
         data = _request(
             "/search/repositories",
             token,
