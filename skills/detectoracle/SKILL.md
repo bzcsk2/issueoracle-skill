@@ -68,7 +68,7 @@ Never claim code is buggy only because similar projects had similar issues.
 Before invoking any DetectorOracle command, silently check whether the setup marker exists. Prefer `~/.config/detectoracle/.env`; accept the legacy `~/.config/issueoracle/.env` for migrated users.
 
 If this is the first run:
-1. Read `skills/issueoracle/nux-wizard.md`.
+1. Read `skills/detectoracle/nux-wizard.md`.
 2. Follow it.
 3. After setup, proceed to intent parsing.
 

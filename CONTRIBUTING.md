@@ -27,12 +27,12 @@ This is the most valuable contribution. A good pattern is one that:
 
 Every pattern PR must include:
 
-- **1 pattern YAML** following the schema in [`skills/issueoracle/references/pattern-schema.md`](skills/issueoracle/references/pattern-schema.md)
-- **1 bad fixture** in `skills/issueoracle/evals/fixtures/<pattern-id>/bad/`
-- **1 good fixture** in `skills/issueoracle/evals/fixtures/<pattern-id>/good/`
+- **1 pattern YAML** following the schema in [`skills/detectoracle/references/pattern-schema.md`](skills/detectoracle/references/pattern-schema.md)
+- **1 bad fixture** in `skills/detectoracle/evals/fixtures/<pattern-id>/bad/`
+- **1 good fixture** in `skills/detectoracle/evals/fixtures/<pattern-id>/good/`
 - **1 OSS evidence link** with a real GitHub issue/PR/commit URL
-- **validate pass**: `uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs`
-- **eval pass**: `uv run python skills/issueoracle/evals/run_eval.py`
+- **validate pass**: `uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs`
+- **eval pass**: `uv run python skills/detectoracle/evals/run_eval.py`
 
 #### Pattern Quality Bar
 
@@ -51,11 +51,11 @@ Every pattern PR must include:
 ### Submitting a PR
 
 1. Fork the repo and create a feature branch.
-2. Add your pattern YAML to the appropriate `skills/issueoracle/packs/<language>/<framework>/` directory.
-3. Add eval fixtures to `skills/issueoracle/evals/fixtures/<pattern-id>/bad/` and `skills/issueoracle/evals/fixtures/<pattern-id>/good/`.
+2. Add your pattern YAML to the appropriate `skills/detectoracle/packs/<language>/<framework>/` directory.
+3. Add eval fixtures to `skills/detectoracle/evals/fixtures/<pattern-id>/bad/` and `skills/detectoracle/evals/fixtures/<pattern-id>/good/`.
 4. Add or update a golden expected file when the eval harness requires it.
 5. Run `uv run pytest tests/ -q` and ensure all tests pass.
-6. Run `uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs`.
+6. Run `uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs`.
 7. Open a PR with a clear title describing the pattern, for example `Add py-django-raw-sql-injection pattern`.
 
 ### Merge Criteria
@@ -80,13 +80,13 @@ uv sync --all-groups
 uv run pytest tests/ -q
 
 # Validate all packs
-uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
 
 # Run evals
-uv run python skills/issueoracle/evals/run_eval.py
+uv run python skills/detectoracle/evals/run_eval.py
 
 # Run with debug logging
-DETECTORACLE_DEBUG=1 uv run python skills/issueoracle/scripts/issueoracle.py review . --emit markdown
+DETECTORACLE_DEBUG=1 uv run python skills/detectoracle/scripts/issueoracle.py review . --emit markdown
 ```
 
 ## Rename Compatibility

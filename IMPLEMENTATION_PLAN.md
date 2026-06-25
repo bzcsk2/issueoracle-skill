@@ -643,13 +643,13 @@ def write_last_run(payload: dict) -> None:
 ### 4.7 验收标准（Phase 0）
 
 ```bash
-python3 skills/issueoracle/scripts/issueoracle.py diagnose
+python3 skills/detectoracle/scripts/issueoracle.py diagnose
 # → 输出环境/依赖/pack 状态 JSON（python 版本、pydantic/pyyaml 可用、packs 数量）
 
-python3 skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+python3 skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
 # → 0 patterns loaded（此时 packs 还没写）
 
-bash skills/issueoracle/scripts/build-skill.sh
+bash skills/detectoracle/scripts/build-skill.sh
 # → 打包 dist/issueoracle.skill
 
 python3 -m pytest tests/test_schema.py -q
@@ -807,7 +807,7 @@ def build_findings(matches: list[MatchResult], threshold: str,
 ### 5.7 验收标准（Phase 1）
 
 ```bash
-python3 scripts/issueoracle.py validate skills/issueoracle/packs
+python3 scripts/issueoracle.py validate skills/detectoracle/packs
 # → 5 patterns loaded, 0 errors
 
 python3 scripts/issueoracle.py review . --emit markdown

@@ -13,7 +13,7 @@ DetectorOracle is not a generic linter and not a generic AI reviewer. It is a lo
 
 ## Rename status
 
-This repository was renamed from IssueOracle to DetectorOracle. Public documentation, install commands, the skill name, and generated bundle now use **DetectorOracle**. The internal Python entrypoint currently remains `skills/issueoracle/scripts/issueoracle.py` for compatibility while the migration settles.
+This repository was renamed from IssueOracle to DetectorOracle. Public documentation, install commands, the skill name, and generated bundle now use **DetectorOracle**. The internal Python entrypoint currently remains `skills/detectoracle/scripts/issueoracle.py` for compatibility while the migration settles.
 
 ## Install
 
@@ -46,7 +46,7 @@ Planned. Until DetectorOracle is accepted into a marketplace, use `npx skills ad
 ```bash
 git clone https://github.com/bzcsk2/detectoracle-skill.git
 mkdir -p ~/.claude/skills
-ln -s "$(pwd)/detectoracle-skill/skills/issueoracle" ~/.claude/skills/detectoracle
+ln -s "$(pwd)/detectoracle-skill/skills/detectoracle" ~/.claude/skills/detectoracle
 ```
 
 ### Manual install for Codex-style skill directories
@@ -54,14 +54,14 @@ ln -s "$(pwd)/detectoracle-skill/skills/issueoracle" ~/.claude/skills/detectorac
 ```bash
 git clone https://github.com/bzcsk2/detectoracle-skill.git
 mkdir -p ~/.codex/skills
-ln -s "$(pwd)/detectoracle-skill/skills/issueoracle" ~/.codex/skills/detectoracle
+ln -s "$(pwd)/detectoracle-skill/skills/detectoracle" ~/.codex/skills/detectoracle
 ```
 
 ### Build local `.skill` bundle
 
 ```bash
 uv sync --all-groups
-uv run python skills/issueoracle/scripts/build_skill.py
+uv run python skills/detectoracle/scripts/build_skill.py
 ```
 
 Generated artifact:
@@ -95,7 +95,7 @@ dist/detectoracle.skill
 git clone https://github.com/bzcsk2/detectoracle-skill
 cd detectoracle-skill
 uv sync --all-groups
-uv run python skills/issueoracle/scripts/issueoracle.py review skills/issueoracle/evals/fixtures/py-fastapi-cors-wildcard/bad --emit markdown
+uv run python skills/detectoracle/scripts/issueoracle.py review skills/detectoracle/evals/fixtures/py-fastapi-cors-wildcard/bad --emit markdown
 ```
 
 Expected output includes a finding with:
@@ -209,10 +209,10 @@ uv sync --all-groups
 uv run ruff format --check .
 uv run ruff check .
 uv run pytest tests/ -q
-uv run python skills/issueoracle/scripts/issueoracle.py diagnose
-uv run python skills/issueoracle/evals/run_eval.py
-uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
-uv run python skills/issueoracle/scripts/build_skill.py
+uv run python skills/detectoracle/scripts/issueoracle.py diagnose
+uv run python skills/detectoracle/evals/run_eval.py
+uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
+uv run python skills/detectoracle/scripts/build_skill.py
 ```
 
 ## How it works

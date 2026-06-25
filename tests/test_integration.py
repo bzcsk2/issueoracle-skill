@@ -12,11 +12,11 @@ class IntegrationTests(unittest.TestCase):
         cls.script = (
             Path(__file__).resolve().parent.parent
             / "skills"
-            / "issueoracle"
+            / "detectoracle"
             / "scripts"
             / "issueoracle.py"
         )
-        cls.packs = Path(__file__).resolve().parent.parent / "skills" / "issueoracle" / "packs"
+        cls.packs = Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "packs"
         cls.python = sys.executable
 
     def _run(self, *args) -> subprocess.CompletedProcess:

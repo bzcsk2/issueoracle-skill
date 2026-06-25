@@ -18,7 +18,7 @@ The public project identity is now:
 
 The following legacy names are intentionally still accepted during the migration window:
 
-- Internal script path: `skills/issueoracle/scripts/issueoracle.py`
+- Internal script path: `skills/detectoracle/scripts/issueoracle.py`
 - Legacy user data directory: `~/.issueoracle`
 - Legacy configuration directory: `~/.config/issueoracle`
 - Legacy environment variables: `ISSUEORACLE_*`
@@ -31,7 +31,7 @@ This avoids breaking existing local installs or losing previously mined bug-expe
 2. Existing users should not be forced to move data manually.
 3. Internal file paths may keep `issueoracle` until a dedicated breaking migration is planned.
 4. Any future full path rename should include:
-   - directory move from `skills/issueoracle` to `skills/detectoracle`,
+   - directory move from `skills/detectoracle` to `skills/detectoracle`,
    - CLI wrapper or alias for old paths,
    - migration tests for `ISSUEORACLE_*` compatibility,
    - explicit release notes.

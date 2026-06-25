@@ -36,16 +36,16 @@ jobs:
         run: uv run pytest tests/ -q
 
       - name: Validate built-in packs
-        run: uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+        run: uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
 
       - name: Run evals
-        run: uv run python skills/issueoracle/evals/run_eval.py
+        run: uv run python skills/detectoracle/evals/run_eval.py
 
       - name: Diagnose
-        run: uv run python skills/issueoracle/scripts/issueoracle.py diagnose
+        run: uv run python skills/detectoracle/scripts/issueoracle.py diagnose
 
       - name: Build DetectorOracle skill bundle
-        run: uv run python skills/issueoracle/scripts/build_skill.py
+        run: uv run python skills/detectoracle/scripts/build_skill.py
 
       - name: Verify DetectorOracle skill bundle
-        run: uv run python skills/issueoracle/scripts/verify.py
+        run: uv run python skills/detectoracle/scripts/verify.py

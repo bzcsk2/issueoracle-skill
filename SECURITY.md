@@ -33,4 +33,4 @@ If you discover a security vulnerability in DetectorOracle, please report it res
 
 ## Threat Model
 
-See [`skills/issueoracle/references/threat-model.md`](skills/issueoracle/references/threat-model.md) for the full threat model covering attack surfaces, mitigations, and trust boundaries.
+See [`skills/detectoracle/references/threat-model.md`](skills/detectoracle/references/threat-model.md) for the full threat model covering attack surfaces, mitigations, and trust boundaries.
