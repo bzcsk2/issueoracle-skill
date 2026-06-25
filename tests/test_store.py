@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,15 +11,14 @@ import store
 class StoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
-        import os
-
-        os.environ["ISSUEORACLE_HOME"] = str(self.tmp)
+        os.environ["DETECTORACLE_HOME"] = str(self.tmp)
+        os.environ.pop("ISSUEORACLE_HOME", None)
 
     def tearDown(self):
-        import os
         import shutil
 
         shutil.rmtree(self.tmp, ignore_errors=True)
+        os.environ.pop("DETECTORACLE_HOME", None)
         os.environ.pop("ISSUEORACLE_HOME", None)
 
     def test_ensure_home(self):
@@ -26,6 +26,20 @@ class StoreTests(unittest.TestCase):
         self.assertTrue(home.exists())
         self.assertTrue((home / "reports").exists())
         self.assertTrue((home / "mining").exists())
+
+    def test_save_experience_writes_canonical_bugplay_paths(self):
+        bugplay_dir = store.save_experience("# Test", '{"experiences": []}')
+        self.assertEqual(bugplay_dir, self.tmp / "bugplay")
+        self.assertTrue((self.tmp / "bugplay" / "bug-experience.md").exists())
+        self.assertTrue((self.tmp / "bugplay" / "experience.json").exists())
+        self.assertEqual(store.resolve_experience_json_path(), self.tmp / "bugplay" / "experience.json")
+
+    def test_resolve_experience_json_path_accepts_legacy_candidates_path(self):
+        legacy = self.tmp / "bugplay" / "candidates"
+        legacy.mkdir(parents=True)
+        legacy_path = legacy / "experience.json"
+        legacy_path.write_text('{"experiences": []}', encoding="utf-8")
+        self.assertEqual(store.resolve_experience_json_path(), legacy_path)
 
     def test_save_report(self):
         md_path, json_path = store.save_report("# Test", '{"test": 1}', "test-repo")
