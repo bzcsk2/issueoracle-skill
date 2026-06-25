@@ -6,7 +6,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-
 REQUIRED_BUNDLE_ENTRIES = {
     "SKILL.md",
     "scripts/detectoracle.py",
