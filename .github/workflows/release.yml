@@ -31,7 +31,7 @@ jobs:
         run: uv run pytest tests/ -q
 
       - name: Validate built-in packs
-        run: uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
+        run: uv run python skills/detectoracle/scripts/detectoracle.py validate skills/detectoracle/packs
 
       - name: Run evals
         run: uv run python skills/detectoracle/evals/run_eval.py

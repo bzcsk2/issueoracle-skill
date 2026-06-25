@@ -13,7 +13,7 @@ DetectorOracle is not a generic linter and not a generic AI reviewer. It is a lo
 
 ## Rename status
 
-This repository was renamed from IssueOracle to DetectorOracle. Public documentation, install commands, the skill name, and generated bundle now use **DetectorOracle**. The internal Python entrypoint currently remains `skills/detectoracle/scripts/issueoracle.py` for compatibility while the migration settles.
+This repository was renamed from IssueOracle to DetectorOracle. Public documentation, install commands, the skill name, generated bundle, and public Python entrypoint now use **DetectorOracle**. The legacy `skills/detectoracle/scripts/issueoracle.py` entrypoint remains for compatibility while the migration settles.
 
 ## Install
 
@@ -95,7 +95,7 @@ dist/detectoracle.skill
 git clone https://github.com/bzcsk2/detectoracle-skill
 cd detectoracle-skill
 uv sync --all-groups
-uv run python skills/detectoracle/scripts/issueoracle.py review skills/detectoracle/evals/fixtures/py-fastapi-cors-wildcard/bad --emit markdown
+uv run python skills/detectoracle/scripts/detectoracle.py review skills/detectoracle/evals/fixtures/py-fastapi-cors-wildcard/bad --emit markdown
 ```
 
 Expected output includes a finding with:
@@ -209,9 +209,9 @@ uv sync --all-groups
 uv run ruff format --check .
 uv run ruff check .
 uv run pytest tests/ -q
-uv run python skills/detectoracle/scripts/issueoracle.py diagnose
+uv run python skills/detectoracle/scripts/detectoracle.py diagnose
 uv run python skills/detectoracle/evals/run_eval.py
-uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
+uv run python skills/detectoracle/scripts/detectoracle.py validate skills/detectoracle/packs
 uv run python skills/detectoracle/scripts/build_skill.py
 ```
 
