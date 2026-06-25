@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import os
 import sys
-from pathlib import Path
 
 import issueoracle
 from lib import env, log, render
 from lib import experience as experience_mod
-from lib import schema, store
+from lib import store
 from lib.version import __version__
 
 
@@ -174,11 +173,11 @@ def cmd_mine(args) -> int:
     repos = [r.strip() for r in args.owner_repo.split(",")]
     logger.info(f"Mining repos: {repos}")
 
-    all_candidates: list[schema.CandidatePattern] = []
+    all_candidates = []
     total_issues = 0
     bug_issues_count = 0
     completed_issues_set: set[str] = set()
-    run_dir: Path | None = None
+    run_dir = None
 
     if args.resume:
         last_run = store.find_last_run_dir()
