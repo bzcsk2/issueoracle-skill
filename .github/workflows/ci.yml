@@ -29,6 +29,18 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format --check .
 
+      - name: Capture Ruff lint output
+        run: |
+          uv run ruff check . > ruff-lint-output.txt 2>&1 || true
+          test -s ruff-lint-output.txt
+
+      - name: Upload Ruff lint output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-lint-output-${{ matrix.python-version }}-${{ matrix.os }}
+          path: ruff-lint-output.txt
+
       - name: Ruff lint
         run: uv run ruff check .
 
