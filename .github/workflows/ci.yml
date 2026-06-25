@@ -34,29 +34,7 @@ jobs:
       - name: Fix final Ruff nesting issue once
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          p = Path("skills/issueoracle/scripts/issueoracle.py")
-          s = p.read_text(encoding="utf-8")
-          old = '''        if args.experience and not getattr(args, "trust_candidates", False):
-            for f in findings_list:
-                if f.matched_pattern.startswith("exp-"):
-                    if f.severity.value not in ("low", "medium"):
-                        f.severity = "medium"
-'''
-          new = '''        if args.experience and not getattr(args, "trust_candidates", False):
-            for f in findings_list:
-                if f.matched_pattern.startswith("exp-") and f.severity.value not in (
-                    "low",
-                    "medium",
-                ):
-                    f.severity = "medium"
-'''
-          if old not in s:
-              raise SystemExit("target block not found")
-          p.write_text(s.replace(old, new), encoding="utf-8")
-          PY
+          python -c 'from pathlib import Path; p=Path("skills/issueoracle/scripts/issueoracle.py"); s=p.read_text(); s=s.replace("                if f.matched_pattern.startswith(\"exp-\"):\n                    if f.severity.value not in (\"low\", \"medium\"):\n                        f.severity = \"medium\"", "                if f.matched_pattern.startswith(\"exp-\") and f.severity.value not in (\"low\", \"medium\"):\n                    f.severity = \"medium\""); p.write_text(s)'
           uv run ruff format .
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
