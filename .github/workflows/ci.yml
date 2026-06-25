@@ -4,9 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -20,8 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -30,19 +25,6 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --all-groups
-
-      - name: Fix final Ruff nesting issue once
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        run: |
-          python -c 'from pathlib import Path; p=Path("skills/issueoracle/scripts/issueoracle.py"); s=p.read_text(); s=s.replace("                if f.matched_pattern.startswith(\"exp-\"):\n                    if f.severity.value not in (\"low\", \"medium\"):\n                        f.severity = \"medium\"", "                if f.matched_pattern.startswith(\"exp-\") and f.severity.value not in (\"low\", \"medium\"):\n                    f.severity = \"medium\""); p.write_text(s)'
-          uv run ruff format .
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add skills/issueoracle/scripts/issueoracle.py
-            git commit -m "style: flatten experience severity guard"
-            git push
-          fi
 
       - name: Ruff format check
         run: uv run ruff format --check .
