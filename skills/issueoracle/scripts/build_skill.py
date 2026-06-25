@@ -21,6 +21,7 @@ EXCLUDED_PARTS = {
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 REQUIRED_ENTRIES = {
     "SKILL.md",
+    "scripts/detectoracle.py",
     "scripts/issueoracle.py",
     "scripts/lib/schema.py",
     "scripts/lib/version.py",
