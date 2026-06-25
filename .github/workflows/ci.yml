@@ -32,6 +32,18 @@ jobs:
       - name: Ruff lint
         run: uv run ruff check .
 
+      - name: Capture unit test output
+        run: |
+          uv run pytest tests/ -q > pytest-output.txt 2>&1 || true
+          test -s pytest-output.txt
+
+      - name: Upload unit test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-output-${{ matrix.python-version }}-${{ matrix.os }}
+          path: pytest-output.txt
+
       - name: Unit tests
         run: uv run pytest tests/ -q
 
