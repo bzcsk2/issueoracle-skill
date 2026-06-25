@@ -91,7 +91,7 @@ DETECTORACLE_DEBUG=1 uv run python skills/detectoracle/scripts/issueoracle.py re
 
 ## Rename Compatibility
 
-The public name is DetectorOracle, but some internal paths still contain `issueoracle` during the migration window. Do not rename directories piecemeal. A full path migration should happen in one dedicated PR with compatibility tests and release notes.
+The public name, repository paths, and skill directory now use DetectorOracle. The `issueoracle.py` module and `ISSUEORACLE_*` environment variables remain as compatibility aliases for migrated users; new docs and examples should prefer `detectoracle.py` and `DETECTORACLE_*`.
 
 ## Code Style
 
