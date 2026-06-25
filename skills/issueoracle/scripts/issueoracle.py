@@ -383,9 +383,11 @@ def cmd_review(args) -> int:
 
         if args.experience and not getattr(args, "trust_candidates", False):
             for f in findings_list:
-                if f.matched_pattern.startswith("exp-"):
-                    if f.severity.value not in ("low", "medium"):
-                        f.severity = "medium"
+                if f.matched_pattern.startswith("exp-") and f.severity.value not in (
+                    "low",
+                    "medium",
+                ):
+                    f.severity = "medium"
 
         report = {
             "version": __version__,
