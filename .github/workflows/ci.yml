@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -17,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -26,17 +31,17 @@ jobs:
       - name: Sync dependencies
         run: uv sync --all-groups
 
-      - name: Generate Ruff format diff
+      - name: Apply Ruff format once
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
         run: |
-          uv run ruff format --diff . > ruff-format-diff.patch || true
-          test -s ruff-format-diff.patch
-
-      - name: Upload Ruff format diff
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-format-diff-${{ matrix.python-version }}-${{ matrix.os }}
-          path: ruff-format-diff.patch
+          uv run ruff format .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add skills tests
+            git commit -m "style: format python with ruff"
+            git push
+          fi
 
       - name: Ruff format check
         run: uv run ruff format --check .
