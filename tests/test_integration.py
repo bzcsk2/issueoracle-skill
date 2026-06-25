@@ -11,7 +11,9 @@ from pathlib import Path
 class IntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        scripts_dir = Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "scripts"
+        scripts_dir = (
+            Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "scripts"
+        )
         cls.script = scripts_dir / "issueoracle.py"
         cls.detectoracle_script = scripts_dir / "detectoracle.py"
         cls.packs = Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "packs"
@@ -25,7 +27,9 @@ class IntegrationTests(unittest.TestCase):
             timeout=30,
         )
 
-    def _run_detectoracle(self, *args, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+    def _run_detectoracle(
+        self, *args, env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess:
         return subprocess.run(
             [self.python, str(self.detectoracle_script)] + list(args),
             capture_output=True,
