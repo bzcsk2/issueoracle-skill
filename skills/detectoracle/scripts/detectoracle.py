@@ -5,9 +5,8 @@ import os
 import sys
 
 import issueoracle
-from lib import env, log, render
+from lib import env, log, render, store
 from lib import experience as experience_mod
-from lib import store
 from lib.version import __version__
 
 
