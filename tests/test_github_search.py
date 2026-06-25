@@ -70,7 +70,10 @@ class GithubSearchTests(unittest.TestCase):
     def test_active_since_date_uses_rolling_window(self):
         now = datetime.datetime(2026, 6, 25, tzinfo=datetime.UTC)
 
-        self.assertEqual(github_search._active_since_date(now=now, window_days=548), "2024-12-24")
+        self.assertEqual(
+            github_search._active_since_date(now=now, window_days=548),
+            "2024-12-24",
+        )
 
     def test_search_similar_repos_uses_dynamic_active_since_query(self):
         captured_queries: list[str] = []
