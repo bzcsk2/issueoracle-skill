@@ -4,9 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -20,8 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -30,19 +25,6 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --all-groups
-
-      - name: Apply Ruff lint fixes once
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        run: |
-          uv run ruff check --fix . || true
-          uv run ruff format .
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add skills tests
-            git commit -m "style: apply ruff lint fixes"
-            git push
-          fi
 
       - name: Ruff format check
         run: uv run ruff format --check .
