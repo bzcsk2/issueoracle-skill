@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -17,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -25,6 +30,51 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --all-groups
+
+      - name: Apply DetectorOracle path migration once
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest' && github.ref_name == 'codex/detectoracle-path-migration'
+        run: |
+          set -euxo pipefail
+
+          if [ -d skills/issueoracle ] && [ ! -d skills/detectoracle ]; then
+            git mv skills/issueoracle skills/detectoracle
+          fi
+
+          python - <<'PY'
+          from pathlib import Path
+
+          skip_dirs = {".git", ".venv", "dist", "__pycache__", ".pytest_cache", ".ruff_cache"}
+          replacements = {
+              "skills/issueoracle": "skills/detectoracle",
+              "skills\\issueoracle": "skills\\detectoracle",
+          }
+
+          for path in Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+              if any(part in skip_dirs for part in path.parts):
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              new_text = text
+              for old, new in replacements.items():
+                  new_text = new_text.replace(old, new)
+              if new_text != text:
+                  path.write_text(new_text, encoding="utf-8")
+          PY
+
+          rm -f .github/workflows/migrate-detectoracle-path.yml
+          uv run ruff format .
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "refactor: migrate skill directory to detectoracle"
+            git push
+          fi
 
       - name: Ruff format check
         run: uv run ruff format --check .
@@ -36,16 +86,16 @@ jobs:
         run: uv run pytest tests/ -q
 
       - name: Validate built-in packs
-        run: uv run python skills/issueoracle/scripts/issueoracle.py validate skills/issueoracle/packs
+        run: uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
 
       - name: Run evals
-        run: uv run python skills/issueoracle/evals/run_eval.py
+        run: uv run python skills/detectoracle/evals/run_eval.py
 
       - name: Diagnose
-        run: uv run python skills/issueoracle/scripts/issueoracle.py diagnose
+        run: uv run python skills/detectoracle/scripts/issueoracle.py diagnose
 
       - name: Build DetectorOracle skill bundle
-        run: uv run python skills/issueoracle/scripts/build_skill.py
+        run: uv run python skills/detectoracle/scripts/build_skill.py
 
       - name: Verify DetectorOracle skill bundle
-        run: uv run python skills/issueoracle/scripts/verify.py
+        run: uv run python skills/detectoracle/scripts/verify.py
