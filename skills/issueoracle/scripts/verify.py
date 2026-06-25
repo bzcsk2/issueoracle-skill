@@ -13,6 +13,7 @@ def verify():
     # Check critical files exist. The main script keeps its legacy file name during the rename.
     critical = [
         skill_dir / "SKILL.md",
+        scripts_dir / "detectoracle.py",
         scripts_dir / "issueoracle.py",
         scripts_dir / "build_skill.py",
         scripts_dir / "lib" / "version.py",
