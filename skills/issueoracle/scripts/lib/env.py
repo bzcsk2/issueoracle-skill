@@ -64,9 +64,11 @@ def get_detectoracle_home() -> Path:
     override = _first_non_empty_env("DETECTORACLE_HOME", "ISSUEORACLE_HOME")
     if override:
         return Path(override).expanduser()
-    if (Path.home() / ".issueoracle").exists() and not (Path.home() / ".detectoracle").exists():
-        return Path.home() / ".issueoracle"
-    return Path.home() / ".detectoracle"
+    legacy_home = Path.home() / ".issueoracle"
+    detectoracle_home = Path.home() / ".detectoracle"
+    if legacy_home.exists() and not detectoracle_home.exists():
+        return legacy_home
+    return detectoracle_home
 
 
 def get_issueoracle_home() -> Path:
