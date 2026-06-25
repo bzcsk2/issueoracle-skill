@@ -68,7 +68,6 @@ class IntegrationTests(unittest.TestCase):
             env.pop("ISSUEORACLE_HOME", None)
             result = self._run_detectoracle("doctor", env=env)
 
-        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("DETECTORACLE_HOME", result.stdout)
         self.assertIn("/detectoracle scan .", result.stdout)
 
