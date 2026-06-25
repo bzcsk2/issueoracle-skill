@@ -18,7 +18,7 @@ jobs:
       - run: uv run python skills/issueoracle/scripts/build_skill.py
       - run: uv run python skills/issueoracle/scripts/verify.py
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/issueoracle.skill
           generate_release_notes: true
