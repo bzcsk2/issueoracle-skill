@@ -4,9 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -20,8 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -30,65 +25,6 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --all-groups
-
-      - name: Apply DetectorOracle path migration once
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest' && (github.ref_name == 'codex/detectoracle-path-migration' || github.head_ref == 'codex/detectoracle-path-migration')
-        run: |
-          set +e
-          {
-            set -uxo pipefail
-
-            if [ -d skills/issueoracle ] && [ ! -d skills/detectoracle ]; then
-              git mv skills/issueoracle skills/detectoracle
-            fi
-
-            python - <<'PY'
-          from pathlib import Path
-
-          skip_dirs = {".git", ".github/workflows", ".venv", "dist", "__pycache__", ".pytest_cache", ".ruff_cache"}
-          replacements = {
-              "skills/issueoracle": "skills/detectoracle",
-              "skills\\issueoracle": "skills\\detectoracle",
-          }
-
-          for path in Path(".").rglob("*"):
-              if not path.is_file():
-                  continue
-              if any(part in skip_dirs for part in path.parts):
-                  continue
-              try:
-                  text = path.read_text(encoding="utf-8")
-              except UnicodeDecodeError:
-                  continue
-              new_text = text
-              for old, new in replacements.items():
-                  new_text = new_text.replace(old, new)
-              if new_text != text:
-                  path.write_text(new_text, encoding="utf-8")
-          PY
-
-            uv run ruff format . || true
-            git restore -- .github/workflows
-            rm -f migration-output.txt
-
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git status --short
-            git add -A
-            if ! git diff --cached --quiet; then
-              git commit -m "refactor: migrate skill directory to detectoracle"
-              git push
-            fi
-          } > migration-output.txt 2>&1
-          cat migration-output.txt
-          exit 0
-
-      - name: Upload migration diagnostics
-        if: always() && matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: detectoracle-migration-output
-          path: migration-output.txt
 
       - name: Ruff format check
         run: uv run ruff format --check .
