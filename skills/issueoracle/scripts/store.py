@@ -8,12 +8,13 @@ from lib import env
 
 
 def ensure_home() -> Path:
-    home = env.get_issueoracle_home()
+    home = env.get_detectoracle_home()
     (home / "reports").mkdir(parents=True, exist_ok=True)
     (home / "cache" / "github").mkdir(parents=True, exist_ok=True)
     (home / "cache" / "repo-profile").mkdir(parents=True, exist_ok=True)
     (home / "mining").mkdir(parents=True, exist_ok=True)
     (home / "bugplay").mkdir(parents=True, exist_ok=True)
+    (home / "runs").mkdir(parents=True, exist_ok=True)
     return home
 
 
@@ -57,7 +58,6 @@ def write_last_run(payload: dict) -> None:
 
 
 def create_run(repos: list[str]) -> Path:
-    import datetime
     home = ensure_home()
     run_id = f"mine-{datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}"
     run_dir = home / "runs" / run_id
