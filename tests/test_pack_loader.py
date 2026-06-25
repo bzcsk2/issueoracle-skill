@@ -97,14 +97,14 @@ class PackLoaderTests(unittest.TestCase):
         import sys
         from pathlib import Path
 
-        packs_dir = Path(__file__).resolve().parent.parent / "skills" / "issueoracle" / "packs"
+        packs_dir = Path(__file__).resolve().parent.parent / "skills" / "detectoracle" / "packs"
         result = subprocess.run(
             [
                 sys.executable,
                 str(
                     Path(__file__).resolve().parent.parent
                     / "skills"
-                    / "issueoracle"
+                    / "detectoracle"
                     / "scripts"
                     / "issueoracle.py"
                 ),
