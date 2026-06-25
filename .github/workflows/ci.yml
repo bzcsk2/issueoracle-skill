@@ -44,8 +44,8 @@ jobs:
       - name: Diagnose
         run: uv run python skills/issueoracle/scripts/issueoracle.py diagnose
 
-      - name: Build skill bundle
+      - name: Build DetectorOracle skill bundle
         run: uv run python skills/issueoracle/scripts/build_skill.py
 
-      - name: Verify skill bundle
+      - name: Verify DetectorOracle skill bundle
         run: uv run python skills/issueoracle/scripts/verify.py
