@@ -4,9 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   test:
     name: test py${{ matrix.python-version }} ${{ matrix.os }}
@@ -20,8 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: astral-sh/setup-uv@v5
 
@@ -30,46 +25,6 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --all-groups
-
-      - name: Apply remaining Ruff fixes once
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        run: |
-          uv run ruff check --fix --unsafe-fixes . || true
-          python - <<'PY'
-          from pathlib import Path
-
-          p = Path("skills/issueoracle/evals/run_eval.py")
-          s = p.read_text(encoding="utf-8")
-          s = s.replace(
-              'f"expected_findings={exp_findings}, got={has_findings} ({len(findings)} findings)"',
-              'f"expected_findings={exp_findings}, "\n                    f"got={has_findings} ({len(findings)} findings)"',
-          )
-          p.write_text(s, encoding="utf-8")
-
-          p = Path("tests/test_experience.py")
-          s = p.read_text(encoding="utf-8")
-          old = 'md = "## Test (1 bugs)\\n\\n### 1. Fallback test\\n- **Symptom**: test\\n- **Root cause**: test\\n- **Trigger condition**: test\\n- **Bad code signals**: `sig1`\\n- **Fix**: fix\\n- **Evidence**: test/repo#1\\n"'
-          new = '''md = (
-              "## Test (1 bugs)\\n\\n"
-              "### 1. Fallback test\\n"
-              "- **Symptom**: test\\n"
-              "- **Root cause**: test\\n"
-              "- **Trigger condition**: test\\n"
-              "- **Bad code signals**: `sig1`\\n"
-              "- **Fix**: fix\\n"
-              "- **Evidence**: test/repo#1\\n"
-          )'''
-          s = s.replace(old, new)
-          p.write_text(s, encoding="utf-8")
-          PY
-          uv run ruff format .
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add skills tests
-            git commit -m "style: resolve remaining ruff lint findings"
-            git push
-          fi
 
       - name: Ruff format check
         run: uv run ruff format --check .
