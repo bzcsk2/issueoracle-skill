@@ -18,8 +18,10 @@ optionalEnv:
   - GITHUB_TOKEN
   - DETECTORACLE_ALLOW_REMOTE_LLM
   - DETECTORACLE_HOME
+  - DETECTORACLE_PYTHON
   - ISSUEORACLE_ALLOW_REMOTE_LLM
   - ISSUEORACLE_HOME
+  - ISSUEORACLE_PYTHON
 bins:
   - python3
 files:
@@ -82,32 +84,35 @@ review ./my-project --experience ...  → findings driven by mined experience
 1. Resolve Python 3.12+.
 2. Resolve SKILL_DIR from the loaded SKILL.md location.
 3. Set DETECTORACLE_HOME to ~/.detectoracle if unset. Accept ISSUEORACLE_HOME as a legacy fallback.
-4. Check git availability (for review --changed).
-5. Check repo existence (for scan/review).
-6. Do NOT upload local code to any remote LLM unless DETECTORACLE_ALLOW_REMOTE_LLM=1 or the legacy ISSUEORACLE_ALLOW_REMOTE_LLM=1 is set.
+4. Resolve DETECTORACLE_PYTHON; fall back to ISSUEORACLE_PYTHON, then python3.
+5. Check git availability (for review --changed).
+6. Check repo existence (for scan/review).
+7. Do NOT upload local code to any remote LLM unless DETECTORACLE_ALLOW_REMOTE_LLM=1 or the legacy ISSUEORACLE_ALLOW_REMOTE_LLM=1 is set.
 
 ## Intent parsing
 Classify into: SCAN_PROJECT | REVIEW_REPO | REVIEW_DIFF | MINE_REPO | REVIEW_WITH_EXPERIENCE | MANAGE_EXPERIENCE | VALIDATE_PACK | DIAGNOSE | DOCTOR | EXPLAIN_FINDING | HELP
 
 ## Commands
+Set `DETECTORACLE_PYTHON="${DETECTORACLE_PYTHON:-${ISSUEORACLE_PYTHON:-python3}}"` before running a command.
+
 ### SCAN_PROJECT
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" scan "$TARGET_REPO" --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" scan "$TARGET_REPO" --emit markdown
 ### REVIEW_REPO
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" review "$TARGET_REPO" --emit markdown
 ### REVIEW_DIFF
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --changed --base main --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" review "$TARGET_REPO" --changed --base main --emit markdown
 ### REVIEW_WITH_EXPERIENCE
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" review "$TARGET_REPO" --experience "$EXPERIENCE_PATH" --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" review "$TARGET_REPO" --experience "$EXPERIENCE_PATH" --emit markdown
 ### MINE_REPO
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" mine "$OWNER_REPOS" --human-review --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" mine "$OWNER_REPOS" --human-review --emit markdown
 ### VALIDATE_PACK
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" validate "$PACK_PATH" --emit markdown
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" validate "$PACK_PATH" --emit markdown
 ### DIAGNOSE
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" diagnose
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" diagnose
 ### DOCTOR
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" doctor
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" doctor
 ### MANAGE_EXPERIENCE
-"$ISSUEORACLE_PYTHON" "$SKILL_DIR/scripts/issueoracle.py" experience list
+"$DETECTORACLE_PYTHON" "$SKILL_DIR/scripts/detectoracle.py" experience list
 
 ## Safety rules
 - Never upload local code to remote LLMs unless `DETECTORACLE_ALLOW_REMOTE_LLM=1` or `ISSUEORACLE_ALLOW_REMOTE_LLM=1` is set.
