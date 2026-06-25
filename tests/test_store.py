@@ -32,7 +32,10 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(bugplay_dir, self.tmp / "bugplay")
         self.assertTrue((self.tmp / "bugplay" / "bug-experience.md").exists())
         self.assertTrue((self.tmp / "bugplay" / "experience.json").exists())
-        self.assertEqual(store.resolve_experience_json_path(), self.tmp / "bugplay" / "experience.json")
+        self.assertEqual(
+            store.resolve_experience_json_path(),
+            self.tmp / "bugplay" / "experience.json",
+        )
 
     def test_resolve_experience_json_path_accepts_legacy_candidates_path(self):
         legacy = self.tmp / "bugplay" / "candidates"
