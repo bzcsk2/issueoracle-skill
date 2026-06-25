@@ -4,21 +4,46 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-      - run: uv sync --all-groups
-      - run: uv run pytest tests/ -q
-      - run: uv run python skills/issueoracle/evals/run_eval.py
-      - run: uv run python skills/issueoracle/scripts/build_skill.py
-      - run: uv run python skills/issueoracle/scripts/verify.py
+      - uses: actions/checkout@v4
 
-      - uses: softprops/action-gh-release@v3
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Unit tests
+        run: uv run pytest tests/ -q
+
+      - name: Validate built-in packs
+        run: uv run python skills/detectoracle/scripts/issueoracle.py validate skills/detectoracle/packs
+
+      - name: Run evals
+        run: uv run python skills/detectoracle/evals/run_eval.py
+
+      - name: Build DetectorOracle skill bundle
+        run: uv run python skills/detectoracle/scripts/build_skill.py
+
+      - name: Verify DetectorOracle skill bundle
+        run: uv run python skills/detectoracle/scripts/verify.py
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          files: dist/issueoracle.skill
+          files: dist/detectoracle.skill
           generate_release_notes: true
