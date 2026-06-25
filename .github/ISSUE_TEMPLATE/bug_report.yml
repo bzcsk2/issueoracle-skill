@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible DetectorOracle bug
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for maintainers to reproduce it without access to private code.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: DetectorOracle reports ... / crashes when ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Provide a minimal command sequence and, if possible, a public fixture or minimal code sample.
+      placeholder: |
+        1. Run `uv run python skills/detectoracle/scripts/issueoracle.py ...`
+        2. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error message, traceback, or unexpected finding if available.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: DetectorOracle version / commit
+      placeholder: v0.4.1 or commit SHA
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: Python 3.12.8
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Do not paste private source code, secrets, tokens, or full private diffs.
+      render: text
+    validations:
+      required: false

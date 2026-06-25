@@ -1,0 +1,9 @@
+# Default owner for repository-wide changes
+* @bzcsk2
+
+# Skill runtime and pattern engine
+/skills/detectoracle/ @bzcsk2
+/tests/ @bzcsk2
+
+# Repository maintenance
+/.github/ @bzcsk2

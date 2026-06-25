@@ -1,0 +1,60 @@
+name: Bug pattern request
+description: Propose a new OSS-evidence-backed bug pattern
+title: "pattern: "
+labels: ["pattern", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for proposing a new DetectorOracle bug pattern. A good pattern should be backed by public OSS evidence and include both bad and good fixtures.
+
+  - type: input
+    id: pattern-id
+    attributes:
+      label: Proposed pattern id
+      placeholder: py-fastapi-example-bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug-class
+    attributes:
+      label: Bug class and root cause
+      description: Describe the recurring bug and why it happens.
+    validations:
+      required: true
+
+  - type: textarea
+    id: oss-evidence
+    attributes:
+      label: OSS evidence
+      description: Link to public GitHub issue, PR, or commit evidence. Do not copy full issue bodies or diffs.
+      placeholder: |
+        - https://github.com/owner/repo/issues/123
+        - https://github.com/owner/repo/pull/456
+    validations:
+      required: true
+
+  - type: textarea
+    id: trigger
+    attributes:
+      label: Trigger condition
+      description: What local code condition should trigger the pattern?
+    validations:
+      required: true
+
+  - type: textarea
+    id: false-positive
+    attributes:
+      label: False-positive boundary
+      description: When should DetectorOracle suppress or avoid this finding?
+    validations:
+      required: true
+
+  - type: textarea
+    id: fixture-plan
+    attributes:
+      label: Fixture plan
+      description: Describe the bad fixture and good fixture needed to test this pattern.
+    validations:
+      required: true
