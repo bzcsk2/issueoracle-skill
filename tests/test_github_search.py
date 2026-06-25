@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import unittest
 from unittest import mock
 
@@ -65,6 +66,26 @@ class GithubSearchTests(unittest.TestCase):
         self.assertEqual(repos[0].owner_repo, "fastapi/fastapi")
         self.assertEqual(repos[0].stars, 75000)
         self.assertEqual(repos[1].owner_repo, "encode/starlette")
+
+    def test_active_since_date_uses_rolling_window(self):
+        now = datetime.datetime(2026, 6, 25, tzinfo=datetime.UTC)
+
+        self.assertEqual(github_search._active_since_date(now=now, window_days=548), "2024-12-24")
+
+    def test_search_similar_repos_uses_dynamic_active_since_query(self):
+        captured_queries: list[str] = []
+
+        def fake_request(path, token, params=None, method="GET"):
+            captured_queries.append(params["q"])
+            return {"items": []}
+
+        with (
+            mock.patch.object(github_search, "_active_since_date", return_value="2025-01-23"),
+            mock.patch.object(github_search, "_request", side_effect=fake_request),
+        ):
+            github_search.search_similar_repos("Python", [], max_results=5)
+
+        self.assertEqual(captured_queries, ["language:Python stars:>20 pushed:>2025-01-23"])
 
     @mock.patch("lib.github_search._request")
     def test_search_similar_repos_empty(self, mock_req):
