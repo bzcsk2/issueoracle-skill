@@ -34,7 +34,7 @@ jobs:
       - name: Apply DetectorOracle path migration once
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest' && (github.ref_name == 'codex/detectoracle-path-migration' || github.head_ref == 'codex/detectoracle-path-migration')
         run: |
-          set -euxo pipefail
+          set -uxo pipefail
 
           if [ -d skills/issueoracle ] && [ ! -d skills/detectoracle ]; then
             git mv skills/issueoracle skills/detectoracle
@@ -66,10 +66,11 @@ jobs:
           PY
 
           rm -f .github/workflows/migrate-detectoracle-path.yml
-          uv run ruff format .
+          uv run ruff format . || true
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m "refactor: migrate skill directory to detectoracle"
